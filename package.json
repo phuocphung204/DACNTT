@@ -12,18 +12,27 @@
     "seed": "node scripts/seedData.js",
     "build": "cd client && npm run build"
   },
-  "keywords": ["university", "email", "request-handling", "nodejs", "react", "mongodb"],
+  "keywords": [
+    "university",
+    "email",
+    "request-handling",
+    "nodejs",
+    "react",
+    "mongodb"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2",
-    "mongoose": "^7.0.0",
-    "dotenv": "^16.0.3",
-    "cors": "^2.8.5",
     "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^8.2.1",
+    "express-validator": "^7.0.0",
     "jsonwebtoken": "^9.0.0",
-    "nodemailer": "^6.9.0",
-    "express-validator": "^7.0.0"
+    "mongoose": "^7.0.0",
+    "nodemailer": "^6.9.0"
   },
   "devDependencies": {
     "concurrently": "^8.0.0",
