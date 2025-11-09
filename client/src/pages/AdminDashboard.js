@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { requestService } from '../services/api';
 import './AdminDashboard.css';
 
@@ -10,11 +10,7 @@ const AdminDashboard = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [responseMessage, setResponseMessage] = useState('');
 
-  useEffect(() => {
-    fetchData();
-  }, [filter]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [requestsRes, statsRes] = await Promise.all([
         requestService.getAllRequests(filter),
@@ -27,7 +23,11 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleStatusUpdate = async (requestId, status) => {
     try {
