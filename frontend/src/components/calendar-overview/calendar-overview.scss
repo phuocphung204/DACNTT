@@ -1,0 +1,62 @@
+.calendar-overview {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+
+  &__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  &__legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 4px;
+
+    &--low {
+      background: #bbf7d0;
+    }
+    &--medium {
+      background: #fde68a;
+    }
+    &--high {
+      background: #fecaca;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+  }
+
+  &__cell {
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    padding: 6px 8px;
+    background: #f9fafb;
+  }
+
+  &__day-number {
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  &__count {
+    font-size: 12px;
+    color: #4b5563;
+  }
+}

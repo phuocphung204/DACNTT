@@ -1,0 +1,11 @@
+@import './variables';
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: $bg-body;
+}
+
+a {
+  text-decoration: none;
+}
