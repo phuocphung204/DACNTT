@@ -15,6 +15,7 @@ import requestRoutes from "./routes/requests.js";
 
 // Services
 import { initGmailWatcher } from "./services/email_ggapi.js";
+import { initModel } from "./services/finetune.js";
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
@@ -78,5 +79,8 @@ connectDB().then(() => {
 
     // Khởi động Gmail Watcher
     await initGmailWatcher();
+
+    // Khởi động Model AI
+    await initModel();
   });
 });

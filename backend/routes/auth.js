@@ -30,6 +30,7 @@ router.post("/reset-password/confirm", handleResetPassword); // đã check ok
 
 // OAuth2 setup for Google
 // Lấy GMAIL_REFRESH_TOKEN
+
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,

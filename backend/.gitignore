@@ -1,2 +1,11 @@
-backend/node_modules
-backend/.env
+# Dependency folders
+node_modules/
+**/node_modules/
+
+# Environment variables
+.env
+**/.env
+
+# Model AI
+mbert_finetuned/
+**/mbert_finetuned/

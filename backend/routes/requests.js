@@ -11,7 +11,6 @@ const router = express.Router();
 // @access  System
 router.post("/", createRequest);
 
-
 router.post("/pubsub", readUnreadEmails);
 
 export default router;
