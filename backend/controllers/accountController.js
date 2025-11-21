@@ -38,8 +38,8 @@ export const getAllAccounts = async (req, res) => {
 
 export const getAccountByDepartmentId = async (req, res) => {
   try {
-    const { departmentId } = req.params;
-    const accounts = await Account.find({ department_id: departmentId, role: "Officer", work_status: "Active", active: true }).select("-password -department_id -role -work_status -active -updatedAt -createdAt -__v");
+    const { department_id } = req.params;
+    const accounts = await Account.find({ department_id: department_id, role: "Officer", work_status: "Active", active: true }).select("-password -department_id -role -work_status -active -updatedAt -createdAt -__v");
     res.json({ mc: 200, me: "Accounts retrieved successfully", dt: accounts });
   } catch (error) {
     res.status(500).json({ mc: 500, me: error.message });

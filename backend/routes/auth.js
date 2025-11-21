@@ -3,15 +3,15 @@ import { google } from "googleapis";
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { protect, admin } from "../middlewares/auth.js";
+import { protect, staff } from "../middlewares/auth.js";
 import { handleRegister, handleLogin, resetPassword, handleResetPassword } from "../controllers/authController.js";
 
 const router = express.Router();
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
-// @access  Private/Admin chỉ quản lý mới được phép tạo tài khoản
-router.post("/register", protect, admin, handleRegister); // đã check ok
+// @access  Private/Staff chỉ nhân viên mới được phép tạo tài khoản
+router.post("/register", protect, staff, handleRegister); // đã check ok
 
 // @desc    Authenticate user & get token
 // @route   POST /api/auth/login

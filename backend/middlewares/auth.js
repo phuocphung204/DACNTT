@@ -22,11 +22,20 @@ export const protect = async (req, res, next) => {
   }
 };
 
-export const admin = (req, res, next) => {
+export const staff = (req, res, next) => {
 //   if (process.env.DEV_KEY === 'true') { next(); return; }
   if (req.account && req.account.role === 'Staff') {
     next();
   } else {
-    res.status(401).json({ message: 'Not authorized as a manager' });
+    res.status(401).json({ message: 'Not authorized as a staff' });
+  }
+};
+
+export const officer = (req, res, next) => {
+//   if (process.env.DEV_KEY === 'true') { next(); return; }
+  if (req.account && req.account.role === 'Officer') {
+    next();
+  } else {
+    res.status(401).json({ message: 'Not authorized as an officer' });
   }
 };

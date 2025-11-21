@@ -4,8 +4,8 @@ const { Schema, model } = mongoose;
 
 const labelSchema = new Schema(
     {
-        id: { type: Number, required: true },
-        name : { type: String, required: true }
+        label_id: { type: Number, required: true, unique: true },
+        label : { type: String, required: true, unique: true }
     },
     { _id : false }
 );

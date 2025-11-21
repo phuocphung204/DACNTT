@@ -11,6 +11,17 @@ const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CALLBACK_URL_LINK
 );
 
+// oauth2Client.on('tokens', (tokens) => {
+//   if (tokens.refresh_token) {
+//     console.log("⚠️ Google trả refresh_token mới → BỎ QUA, KHÔNG GHI ĐÈ!");
+//     // KHÔNG làm gì cả — không overwrite .env
+//   }
+//   if (tokens.access_token) {
+//     console.log("Google cấp access_token mới → OK");
+//     // Quan trọng: KHÔNG setCredentials lại để tránh merge sai
+//   }
+// });
+
 oauth2Client.setCredentials({
   refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
 });

@@ -13,13 +13,3 @@ export const createDepartment = async (req, res) => {
     res.status(500).json({ ec: 500, me: error.message });
   }
 };
-
-export const getDepartmentByLabel = async (req, res) => {
-    try {
-        const label = req.body.label;
-        const department = await Department.findOne({ labels: label });
-        res.json({ ec: 200, me: "Departments retrieved successfully", dt: department });
-    } catch (error) {
-        res.status(500).json({ ec: 500, me: error.message });
-    }
-};
