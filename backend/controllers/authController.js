@@ -12,7 +12,7 @@ const generateResetToken = (accountId) => {
     );
 };
 
-const generateToken = (_id) => {
+export const generateToken = (_id) => {
     return jwt.sign({ _id }, process.env.JWT_SECRET, {
         expiresIn: "1d",
     });
@@ -82,50 +82,50 @@ const handleResetPassword = async (req, res) => {
     }
 };
 
-const handleRegister = async (req, res) => {
-    try {
-        const { name, email, password, position, gender, role, department_id } = req.body;
+// const handleRegister = async (req, res) => {
+//     try {
+//         const { name, email, password, position, gender, role, department_id } = req.body;
 
-        // Check if account exists
-        const accountExists = await Account.findOne({ email });
-        if (accountExists) {
-            return res.status(400).json({ ec: 400, em: "Email đã được sử dụng" });
-        }
+//         // Check if account exists
+//         const accountExists = await Account.findOne({ email });
+//         if (accountExists) {
+//             return res.status(400).json({ ec: 400, em: "Email đã được sử dụng" });
+//         }
 
-        // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+//         // Hash password
+//         const salt = await bcrypt.genSalt(10);
+//         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Create account
-        const account = await Account.create({
-            name,
-            email,
-            password: hashedPassword,
-            position,
-            gender,
-            role,
-            department_id: department_id || null
-        });
+//         // Create account
+//         const account = await Account.create({
+//             name,
+//             email,
+//             password: hashedPassword,
+//             position,
+//             gender,
+//             role,
+//             department_id: department_id || null
+//         });
 
-        if (account) {
-            res.status(201).json({
-                ec: 0,
-                em: 'Đăng ký thành công',
-                dt: {
-                    _id: account._id,
-                    name: account.name,
-                    email: account.email,
-                    role: account.role,
-                    token: generateToken(account._id), // trả về token khi đăng ký thành công
-                }
-            });
-        } else {
-            res.status(400).json({ ec: 400, em: "Dữ liệu đăng ký không hợp lệ" });
-        }
-    } catch (error) {
-        res.status(500).json({ ec: 500, em: error.message });
-    }
-};
+//         if (account) {
+//             res.status(201).json({
+//                 ec: 0,
+//                 em: 'Đăng ký thành công',
+//                 dt: {
+//                     _id: account._id,
+//                     name: account.name,
+//                     email: account.email,
+//                     role: account.role,
+//                     token: generateToken(account._id), // trả về token khi đăng ký thành công
+//                 }
+//             });
+//         } else {
+//             res.status(400).json({ ec: 400, em: "Dữ liệu đăng ký không hợp lệ" });
+//         }
+//     } catch (error) {
+//         res.status(500).json({ ec: 500, em: error.message });
+//     }
+// };
 
 const handleLogin = async (req, res) => {
     try {
@@ -154,4 +154,4 @@ const handleLogin = async (req, res) => {
     }
 };
 
-export { handleRegister, handleLogin, handleResetPassword, resetPassword };
+export { /*handleRegister,*/ handleLogin, handleResetPassword, resetPassword };

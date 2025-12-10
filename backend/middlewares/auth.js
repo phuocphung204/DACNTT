@@ -22,6 +22,15 @@ export const protect = async (req, res, next) => {
   }
 };
 
+export const admin = (req, res, next) => {
+//   if (process.env.DEV_KEY === 'true') { next(); return; }
+  if (req.account && req.account.role === 'Admin') {
+    next();
+  } else {
+    res.status(401).json({ message: 'Not authorized as an admin' });
+  }
+};
+
 export const staff = (req, res, next) => {
 //   if (process.env.DEV_KEY === 'true') { next(); return; }
   if (req.account && req.account.role === 'Staff') {

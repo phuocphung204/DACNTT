@@ -10,14 +10,17 @@ const accountSchema = new Schema(
     password: { type: String, required: true },
     position: { type: String, required: true },
     gender: { type: String, enum: ["Male", "Female"], required: true },
-    role: { type: String, enum: ["Officer", "Staff"], required: true },
+    role: { type: String, enum: ["Officer", "Staff", "Admin"], required: true },
     phone_number: { type: String },
-    avatar_url: { type: String },
+    avatar: { type: String },
     work_status: { type: String, enum: ["Active", "OnLeave", "Retired"], default: "Active" },
     active: { type: Boolean, default: true },
     department_id: { type: Schema.Types.ObjectId, ref: "Department" } // Nếu role là Officer, thì có department_id
   },
-  { timestamps: true }
+  { timestamps: {
+    createdAt: "created_at",
+    updatedAt: "updated_at"
+  } }
 );
 
 //  Export 

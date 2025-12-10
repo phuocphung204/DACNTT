@@ -5,9 +5,10 @@ const { Schema, model } = mongoose;
 const historySchema = new Schema(
     {
         status: { type: String, enum: ["Pending", "InProgress", "Resolved", "Rejected"] },
-        updated_at: { type: Date, default: Date.now }
+        changed_at: { type: Date, default: Date.now },
+        changed_by: { type: Schema.Types.ObjectId, ref: "Account", default: null }
     },
-    { _id : false }
+    { _id: false }
 );
 const predictSchema = new Schema(
     {
@@ -17,10 +18,10 @@ const predictSchema = new Schema(
         score: { type: Number, required: true },
         is_used: { type: Boolean, default: false }
     },
-    { _id : false }
+    { _id: false }
 );
 
-const  requestSchema = new Schema(
+const requestSchema = new Schema(
     {
         student_email: { type: String, required: true },
         subject: { type: String, required: true },
@@ -33,7 +34,12 @@ const  requestSchema = new Schema(
         attachments: [{ type: String }],
         history: [historySchema]
     }
-    , { timestamps: false }
+    , {
+        timestamps: {
+            createdAt: "created_at",
+            updatedAt: "updated_at"
+        }
+    }
 );
 
 const Request = mongoose.models.Request || model("Request", requestSchema);
