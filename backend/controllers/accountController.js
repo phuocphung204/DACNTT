@@ -1,6 +1,6 @@
 import Account from "../models/Account.js";
 import bcrypt from "bcryptjs";
-import { generateToken } from "../models/authController.js";
+import { generateToken } from "../controllers/authController.js";
 
 // System only
 export const getAccountByDepartmentId = async (req, res) => {
@@ -99,6 +99,7 @@ export const createAccount = async (req, res) => {
         }
       });
     }
+    res.status(400).json({ mc: 400, me: "Invalid role specified" });
   } catch (error) {
     res.status(500).json({ mc: 500, me: error.message });
   }
