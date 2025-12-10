@@ -40,6 +40,24 @@ export const staff = (req, res, next) => {
   }
 };
 
+export const staff_or_admin = (req, res, next) => {
+//   if (process.env.DEV_KEY === 'true') { next(); return; }
+  if (req.account && (req.account.role === 'Staff' || req.account.role === 'Admin')) {
+    next();
+  } else {
+    res.status(401).json({ message: 'Not authorized as a staff or admin' });
+  }
+};
+
+export const staff_or_officer = (req, res, next) => {
+//   if (process.env.DEV_KEY === 'true') { next(); return; }
+  if (req.account && (req.account.role === 'Staff' || req.account.role === 'Officer')) {
+    next();
+  } else {
+    res.status(401).json({ message: 'Not authorized as a staff or officer' });
+  }
+};
+
 export const officer = (req, res, next) => {
 //   if (process.env.DEV_KEY === 'true') { next(); return; }
   if (req.account && req.account.role === 'Officer') {
