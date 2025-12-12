@@ -21,6 +21,16 @@ const predictSchema = new Schema(
     { _id: false }
 );
 
+const attachmentSchema = new Schema(
+    {
+        originalname: { type: String, required: true },
+        mime_type: { type: String, required: true },
+        cloud_key: { type: String, required: true }
+    },
+    { _id: true }
+);
+
+
 const requestSchema = new Schema(
     {
         student_email: { type: String, required: true },
@@ -31,7 +41,7 @@ const requestSchema = new Schema(
         prediction: predictSchema,
         assigned_to: { type: Schema.Types.ObjectId, ref: "Account", default: null },
         status: { type: String, enum: ["Pending", "InProgress", "Resolved", "Rejected"], default: "Pending" },
-        attachments: [{ type: String }],
+        attachments: [attachmentSchema],
         history: [historySchema]
     }
     , {

@@ -2,6 +2,8 @@ import Account from "../models/Account.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../controllers/authController.js";
 import transporter from "../services/send_email_smtp.js";
+import { supabase } from "../services/supabaseClient.js";
+
 
 // System only
 export const getAccountByDepartmentId = async (req, res) => {
@@ -305,6 +307,34 @@ export const updateMyProfile = async (req, res) => {
     } else {
       res.status(404).json({ mc: 404, me: "Account not found" });
     }
+  } catch (error) {
+    res.status(500).json({ mc: 500, me: error.message });
+  }
+};
+
+export const uploadAvatar = async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ mc: 400, me: "No file uploaded" });
+    }
+    const filename = `${Date.now()}_${file.originalname}`;
+    const { data, error } = await supabase.storage
+      .from('uploads')
+      .upload(filename, file.buffer, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.mimetype
+      });
+    if (error) {
+      return res.status(500).json({ mc: 500, me: error.message });
+    }
+    // tạo public URL
+    const publicUrl = supabase.storage.from('uploads').getPublicUrl(filename).data.publicUrl;
+    // Lưu vào trong Account
+    req.account.avatar = publicUrl;
+    await req.account.save();
+    res.status(200).json({ mc: 200, me: "Image uploaded successfully", dt: { publicUrl, data } });
   } catch (error) {
     res.status(500).json({ mc: 500, me: error.message });
   }

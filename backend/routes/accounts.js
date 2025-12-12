@@ -1,8 +1,8 @@
 import express from "express";
 
-import { protect, admin, staff_or_admin, staff_or_officer } from "../middlewares/auth.js";
-import { getAllAccounts, getAccountByDepartmentId, updateMyPassword, getAccountById, getMyProfile, updateMyProfile, createAccount, updateAccount } from "../controllers/accountController.js";
-
+import { protect, upload, admin, staff_or_admin, staff_or_officer } from "../middlewares/auth.js";
+import { getAllAccounts, getAccountByDepartmentId, updateMyPassword, getAccountById,
+        getMyProfile, updateMyProfile, createAccount, updateAccount, uploadAvatar } from "../controllers/accountController.js";
 
 const router = express.Router();
 
@@ -12,6 +12,12 @@ const router = express.Router();
 // @route   GET /api/accounts/me
 // @access  Private/Staff-Officer
 router.get("/me", protect, staff_or_officer, getMyProfile);
+
+// @desc    Upload own avatar
+// @route   POST /api/accounts/me/avatar
+// @access  Private/Staff-Officer
+// TODO: frontend phải dùng <input type="file" name="avatar" />
+router.post("/me/avatar", protect, staff_or_officer, upload.single("avatar"), uploadAvatar);
 
 // @desc    Update own account
 // @route   PUT /api/accounts/me/update_password

@@ -1,19 +1,33 @@
-import { pipeline } from '@xenova/transformers';
-import dotenv from 'dotenv';
+import { pipeline, env } from '@xenova/transformers';
 
-dotenv.config();
+// Đặt cấu hình môi trường để chỉ sử dụng mô hình local
+env.allowRemoteModels = false;
+env.allowRemoteFiles = false;
 
-// Load model pipeline từ Hugging Face Hub
+// Đặt thư mục cha của mô hình local
+env.localModelPath = './models';
+
 let nlp = null;
 
 export const initModel = async () => {
-    if (!nlp) {
-        nlp = await pipeline('text-classification', 'PhuocPhung/mbert_finetuned', {
-            auth: process.env.HUGGINGFACEHUB_API_TOKEN
-        });
-        console.log('Model AI loaded');
+    try {
+        if (!nlp) {
+            console.log("Loading local ONNX model...");
+
+            nlp = await pipeline(
+                'text-classification',
+                'mbert_onnx'
+                // ,{ progress_callback: console.log }
+            );
+
+            console.log("Local model loaded");
+        }
+
+        return nlp;
+    } catch (err) {
+        console.error("Error loading model:", err);
+        throw err;
     }
-    return nlp;
 };
 
 const id2label = {

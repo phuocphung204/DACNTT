@@ -1,8 +1,8 @@
 import express from "express";
 
-import { createRequest, getAllRequests, usePredictionByRequestId, assignRequestToOfficer } from "../controllers/requestController.js";
+import { createRequest, getAllRequests, usePredictionByRequestId, assignRequestToOfficer, getRequestById, uploadAttachments, downloadAttachment } from "../controllers/requestController.js";
 import { readUnreadEmails } from "../services/email_ggapi.js";
-import { protect, staff } from "../middlewares/auth.js";
+import { protect, staff, upload, staff_or_officer, officer } from "../middlewares/auth.js";
 
 const router = express.Router();
 
@@ -20,6 +20,21 @@ router.post("/pubsub", readUnreadEmails);
 // @route   GET /api/requests
 // @access  System
 router.get("/", getAllRequests);
+
+// Get request by ID
+// @route   GET /api/requests/:request_id
+// @access  Private/Staff
+router.get("/:request_id", protect, staff_or_officer, getRequestById);
+
+// Upload attachment to request by ID
+// @route   POST /api/requests/:request_id/attachments
+// @access  System
+router.post("/:request_id/attachments", upload.single("attachment"), uploadAttachments);
+
+// Download attachment by request ID and attachment ID
+// @route   GET /api/requests/:request_id/attachments/:attachment_id
+// @access  Private/Staff-Officer
+router.get("/:request_id/attachments/:attachment_id", protect, officer, downloadAttachment);
 
 // Use prediction by request ID
 // @route   PUT /api/requests/use-prediction/:request_id

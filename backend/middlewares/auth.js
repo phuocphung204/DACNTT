@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import Account from '../models/Account.js';
+import multer from "multer";
 
 export const protect = async (req, res, next) => {
   let token;
@@ -66,3 +67,7 @@ export const officer = (req, res, next) => {
     res.status(401).json({ message: 'Not authorized as an officer' });
   }
 };
+
+// dùng memory để upload trực tiếp lên Supabase
+const storage = multer.memoryStorage(); 
+export const upload = multer({ storage });

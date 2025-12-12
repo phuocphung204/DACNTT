@@ -2,6 +2,8 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import SmeeClient from 'smee-client';
+import cors from "cors";
+import morgan from "morgan";
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +22,16 @@ import { initModel } from "./services/finetune.js";
 // Middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+// Morgan for logging
+app.use(morgan("dev"));
 
 // MongoDB connection
 const connectDB = async () => {
@@ -85,9 +97,9 @@ connectDB().then(() => {
     console.log(`Server running on port ${PORT}`);
     
     // Connect to watch Gmail
-    // await watch_Gmail();
+    await watch_Gmail();
 
     // Khởi động Model AI
-    // await initModel();
+    await initModel();
   });
 });
