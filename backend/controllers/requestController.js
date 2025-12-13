@@ -131,7 +131,6 @@ export const downloadAttachment = async (req, res) => {
 };
 
 // Admin and Staff only
-// TODO: test
 export const getAllRequests = async (req, res) => {
     try {
         const { status, date, today, weekly, monthly, page } = req.query;
@@ -147,27 +146,29 @@ export const getAllRequests = async (req, res) => {
             const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
             const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
             filter.created_at = { $gte: startOfDay, $lt: endOfDay };
-        } 
+        }
         // 2. Hôm nay
         else if (today === 'true') {
             const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
             filter.created_at = { $gte: startOfDay, $lt: endOfDay };
-        } 
+        }
         // 3. Tuần hiện tại
         else if (weekly === 'true') {
             const firstDayOfWeek = new Date(now);
-            firstDayOfWeek.setDate(firstDayOfWeek.getDate() - firstDayOfWeek.getDay()); // Chủ nhật tuần hiện tại
+            const day = firstDayOfWeek.getDay() || 7; // CN = 7
+            firstDayOfWeek.setDate(firstDayOfWeek.getDate() - day + 1);
+
             const lastDayOfWeek = new Date(firstDayOfWeek);
             lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
             filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
-        } 
+        }
         // 4. Tháng hiện tại
         else if (monthly === 'true') {
             const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
             const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
             filter.created_at = { $gte: firstDayOfMonth, $lt: lastDayOfMonth };
-        } 
+        }
         // 5. Mặc định lấy hôm nay
         else {
             const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -183,7 +184,7 @@ export const getAllRequests = async (req, res) => {
         const requests = await Request.find(filter)
             .sort({ created_at: -1, priority: 1 })
             .skip(skip)
-            .limit(pageSize);
+            .limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to');
 
         res.status(200).json({ ec: 200, em: "Requests retrieved successfully", dt: requests });
     } catch (error) {

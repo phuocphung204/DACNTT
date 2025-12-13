@@ -17,7 +17,7 @@ router.post("/", createRequest);
 router.post("/pubsub", readUnreadEmails);
 
 // Get all requests
-// @route   GET /api/requests
+// @route   GET /api/requests?status=<status>&date=<date>&today=false&weekly=false&monthly=false&page=<page>
 // @access  System
 router.get("/", getAllRequests);
 

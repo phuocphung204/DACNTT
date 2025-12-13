@@ -77,9 +77,9 @@ connectDB().then(() => {
     console.log(`Server running on port ${PORT}`);
     
     // Khởi động Gmail Watcher
-    await initGmailWatcher();
+    // await initGmailWatcher();
 
     // Khởi động Model AI
-    await initModel();
+    // await initModel();
   });
 });
