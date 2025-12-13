@@ -131,9 +131,60 @@ export const downloadAttachment = async (req, res) => {
 };
 
 // Admin and Staff only
+// TODO: test
 export const getAllRequests = async (req, res) => {
     try {
-        const requests = await Request.find().sort({ created_at: -1 });
+        const { status, date, today, weekly, monthly, page } = req.query;
+
+        const filter = {};
+        if (status) filter.status = status;
+
+        const now = new Date();
+
+        // 1. Ngày cụ thể
+        if (date) {
+            const selectedDate = new Date(date);
+            const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+            const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
+            filter.created_at = { $gte: startOfDay, $lt: endOfDay };
+        } 
+        // 2. Hôm nay
+        else if (today === 'true') {
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            filter.created_at = { $gte: startOfDay, $lt: endOfDay };
+        } 
+        // 3. Tuần hiện tại
+        else if (weekly === 'true') {
+            const firstDayOfWeek = new Date(now);
+            firstDayOfWeek.setDate(firstDayOfWeek.getDate() - firstDayOfWeek.getDay()); // Chủ nhật tuần hiện tại
+            const lastDayOfWeek = new Date(firstDayOfWeek);
+            lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
+            filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
+        } 
+        // 4. Tháng hiện tại
+        else if (monthly === 'true') {
+            const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            filter.created_at = { $gte: firstDayOfMonth, $lt: lastDayOfMonth };
+        } 
+        // 5. Mặc định lấy hôm nay
+        else {
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            filter.created_at = { $gte: startOfDay, $lt: endOfDay };
+        }
+
+        // Phân trang
+        const pageNumber = parseInt(page) || 1;
+        const pageSize = 20;
+        const skip = (pageNumber - 1) * pageSize;
+
+        const requests = await Request.find(filter)
+            .sort({ created_at: -1, priority: 1 })
+            .skip(skip)
+            .limit(pageSize);
+
         res.status(200).json({ ec: 200, em: "Requests retrieved successfully", dt: requests });
     } catch (error) {
         res.status(500).json({ ec: 500, em: error.message });
@@ -154,12 +205,15 @@ export const getRequestById = async (req, res) => {
 };
 
 // Staff only
+// Tự động
 export const usePredictionByRequestId = async (req, res) => {
     try {
         const request_id = req.params.request_id;
         const request = await Request.findById(request_id);
         request.prediction.is_used = true;
         request.department_id = request.prediction.department_id;
+        request.label = request.prediction.label;
+        request.priority = 3; //TODO Mặc định trung bình: Sửa sau nếu thêm được dự đoán priority từ model
         await request.save();
         if (!request) {
             return res.status(404).json({ ec: 404, em: "Request not found" });
@@ -169,16 +223,18 @@ export const usePredictionByRequestId = async (req, res) => {
         res.status(500).json({ ec: 500, em: error.message });
     }
 };
-
+// Thủ công
 export const assignRequestToOfficer = async (req, res) => {
     try {
         const request_id = req.params.request_id;
-        const { assigned_to } = req.body;
+        const { assigned_to, priority, label } = req.body;
         const request = await Request.findById(request_id);
         if (!request) {
             return res.status(404).json({ ec: 404, em: "Request not found" });
         }
         request.assigned_to = assigned_to;
+        request.label = label;
+        request.priority = priority;
         await request.save();
         res.status(200).json({ ec: 200, em: "Request assigned to officer successfully", dt: request });
     } catch (error) {

@@ -38,6 +38,8 @@ const requestSchema = new Schema(
         content: { type: String, required: true },
         student_id: { type: String, required: true },
         department_id: { type: Schema.Types.ObjectId, ref: "Department", default: null },
+        label: { type: String, default: null }, // Nhãn thủ công lấy từ model AI đã training
+        priority: { type: Number, enum: [1, 2, 3, 4], default: 3 },
         prediction: predictSchema,
         assigned_to: { type: Schema.Types.ObjectId, ref: "Account", default: null },
         status: { type: String, enum: ["Pending", "InProgress", "Resolved", "Rejected"], default: "Pending" },

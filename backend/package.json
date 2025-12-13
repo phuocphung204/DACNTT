@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "concurrently \"node smee.js\" \"nodemon server.js\""
   },
   "keywords": [],
   "author": "",
@@ -26,5 +26,8 @@
     "multer": "^2.0.2",
     "nodemailer": "^7.0.10",
     "smee-client": "^5.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
