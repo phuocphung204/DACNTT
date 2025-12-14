@@ -2,6 +2,7 @@ import Request from "../models/Request.js";
 import Department from "../models/Department.js";
 import { preprocessText, predict_label } from "../services/finetune.js";
 import { supabase } from "../services/supabaseClient.js";
+import { request } from "express";
 
 // System
 export const createRequest = async (req, res) => {
@@ -130,68 +131,6 @@ export const downloadAttachment = async (req, res) => {
     }
 };
 
-// Admin and Staff only
-export const getAllRequests = async (req, res) => {
-    try {
-        const { status, date, today, weekly, monthly, page } = req.query;
-
-        const filter = {};
-        if (status) filter.status = status;
-
-        const now = new Date();
-
-        // 1. Ngày cụ thể
-        if (date) {
-            const selectedDate = new Date(date);
-            const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-            const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
-            filter.created_at = { $gte: startOfDay, $lt: endOfDay };
-        }
-        // 2. Hôm nay
-        else if (today === 'true') {
-            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-            filter.created_at = { $gte: startOfDay, $lt: endOfDay };
-        }
-        // 3. Tuần hiện tại
-        else if (weekly === 'true') {
-            const firstDayOfWeek = new Date(now);
-            const day = firstDayOfWeek.getDay() || 7; // CN = 7
-            firstDayOfWeek.setDate(firstDayOfWeek.getDate() - day + 1);
-
-            const lastDayOfWeek = new Date(firstDayOfWeek);
-            lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
-            filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
-        }
-        // 4. Tháng hiện tại
-        else if (monthly === 'true') {
-            const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-            filter.created_at = { $gte: firstDayOfMonth, $lt: lastDayOfMonth };
-        }
-        // 5. Mặc định lấy hôm nay
-        else {
-            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-            filter.created_at = { $gte: startOfDay, $lt: endOfDay };
-        }
-
-        // Phân trang
-        const pageNumber = parseInt(page) || 1;
-        const pageSize = 20;
-        const skip = (pageNumber - 1) * pageSize;
-
-        const requests = await Request.find(filter)
-            .sort({ created_at: -1, priority: 1 })
-            .skip(skip)
-            .limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to');
-
-        res.status(200).json({ ec: 200, em: "Requests retrieved successfully", dt: requests });
-    } catch (error) {
-        res.status(500).json({ ec: 500, em: error.message });
-    }
-};
-
 export const getRequestById = async (req, res) => {
     try {
         const request_id = req.params.request_id;
@@ -206,38 +145,220 @@ export const getRequestById = async (req, res) => {
 };
 
 // Staff only
-// Tự động
+export const getAllRequests = async (req, res) => {
+    try {
+        const { date, today, weekly, monthly, page } = req.query;
+
+        const filter = {};
+        const now = new Date();
+
+        // Ngày cụ thể
+        if (date) {
+            const selectedDate = new Date(date);
+            const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+            const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
+            filter.created_at = { $gte: startOfDay, $lt: endOfDay };
+        }
+        // Hôm nay
+        else if (today === 'true') {
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            filter.created_at = { $gte: startOfDay, $lt: endOfDay };
+        }
+        // Tuần hiện tại
+        else if (weekly === 'true') {
+            const firstDayOfWeek = new Date(now);
+            const day = firstDayOfWeek.getDay() || 7; // CN = 7
+            firstDayOfWeek.setDate(firstDayOfWeek.getDate() - day + 1);
+
+            const lastDayOfWeek = new Date(firstDayOfWeek);
+            lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
+            filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
+        }
+        // Tháng hiện tại
+        else if (monthly === 'true') {
+            const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            filter.created_at = { $gte: firstDayOfMonth, $lt: lastDayOfMonth };
+        }
+        // Mặc định lấy hôm nay
+        else {
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            filter.created_at = { $gte: startOfDay, $lt: endOfDay };
+        }
+
+        // Phân trang
+        const pageNumber = parseInt(page) || 1;
+        const pageSize = 20;
+        const skip = (pageNumber - 1) * pageSize;
+
+        const [requests_pending, requests_in_progress, requests_resolved,
+            count_pending, count_in_progress, count_resolved, total] = await Promise.all([
+                Request.find({ ...filter, status: "Pending" })
+                    .sort({ created_at: -1, priority: 1 })
+                    .skip(skip)
+                    .limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+                Request.find({ ...filter, status: "InProgress" })
+                    .sort({ created_at: -1, priority: 1 })
+                    .skip(skip)
+                    .limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+                Request.find({ ...filter, status: "Resolved" })
+                    .sort({ created_at: -1, priority: 1 })
+                    .skip(skip)
+                    .limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+                Request.countDocuments({ ...filter, status: "Pending" }),
+                Request.countDocuments({ ...filter, status: "InProgress" }),
+                Request.countDocuments({ ...filter, status: "Resolved" }),
+                Request.countDocuments({ ...filter })
+            ]);
+
+        res.status(200).json({
+            ec: 200, em: "Requests retrieved successfully", dt: {
+                total_requests: total,
+                pending: { requests: requests_pending, total: count_pending },
+                in_progress: { requests: requests_in_progress, total: count_in_progress },
+                resolved: { requests: requests_resolved, total: count_resolved }
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ ec: 500, em: error.message });
+    }
+};
+
+// Tự động chọn nhãn, ưu tiên, phòng ban từ dự đoán của AI và gán cho officer (gán officer sửa được default là officer có số task (assigned vs inprogress) ít nhất trong phòng ban)
 export const usePredictionByRequestId = async (req, res) => {
     try {
         const request_id = req.params.request_id;
-        const request = await Request.findById(request_id);
-        request.prediction.is_used = true;
-        request.department_id = request.prediction.department_id;
-        request.label = request.prediction.label;
-        request.priority = 3; //TODO Mặc định trung bình: Sửa sau nếu thêm được dự đoán priority từ model
-        await request.save();
+        const assigned_to = req.body.assigned_to;
+        // Lấy account officer có số task ít nhất trong department của request
+
+        const request = await Request.findByIdAndUpdate(request_id, {
+            status: "Assigned",
+            $push: { history: { status: "Assigned", changed_by: req.account._id } }
+        }, { new: true });
+        
         if (!request) {
             return res.status(404).json({ ec: 404, em: "Request not found" });
         }
+
+        request.label = request.prediction.label;
+        request.department_id = request.prediction.department_id;
+        request.prediction.is_used = true;
+        request.assigned_to = assigned_to;
+        request.priority = 3; // Cập nhật nếu thuật toán dự đoán được priority
+        await request.save();
+        //TODO Mặc định trung bình: Sửa sau nếu thêm được dự đoán priority từ model
+        
         res.status(200).json({ ec: 200, em: "Prediction marked as used", dt: request });
     } catch (error) {
         res.status(500).json({ ec: 500, em: error.message });
     }
 };
-// Thủ công
+// Thủ công chọn nhãn, phòng ban, ưu tiên và gán cho officer (tự chọn officer)
 export const assignRequestToOfficer = async (req, res) => {
     try {
         const request_id = req.params.request_id;
-        const { assigned_to, priority, label } = req.body;
-        const request = await Request.findById(request_id);
+        const { assigned_to, priority, label, department_id } = req.body;
+        const request = await Request.findByIdAndUpdate(request_id, {
+            status: "Assigned",
+            $push: { history: { status: "Assigned", changed_by: req.account._id } }
+        }, { new: true });
+
         if (!request) {
             return res.status(404).json({ ec: 404, em: "Request not found" });
         }
+
         request.assigned_to = assigned_to;
+        request.department_id = department_id;
         request.label = label;
         request.priority = priority;
         await request.save();
+
         res.status(200).json({ ec: 200, em: "Request assigned to officer successfully", dt: request });
+    } catch (error) {
+        res.status(500).json({ ec: 500, em: error.message });
+    }
+};
+
+// Officer only
+export const getMyAssignedRequests = async (req, res) => {
+    try {
+        const { date, today, weekly, monthly, page } = req.query;
+        const officer_id = req.user._id;
+
+        const filter = { assigned_to: officer_id };
+        const now = new Date();
+
+        // Ngày cụ thể
+        if (date) {
+            const selectedDate = new Date(date);
+            const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+            const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
+            filter.created_at = { $gte: startOfDay, $lt: endOfDay };
+        }
+        // Hôm nay
+        else if (today === 'true') {
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            filter.created_at = { $gte: startOfDay, $lt: endOfDay };
+        }
+        // Tuần hiện tại
+        else if (weekly === 'true') {
+            const firstDayOfWeek = new Date(now);
+            const day = firstDayOfWeek.getDay() || 7; // CN = 7
+            firstDayOfWeek.setDate(firstDayOfWeek.getDate() - day + 1);
+
+            const lastDayOfWeek = new Date(firstDayOfWeek);
+            lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
+            filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
+        }
+        // Tháng hiện tại
+        else if (monthly === 'true') {
+            const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            filter.created_at = { $gte: firstDayOfMonth, $lt: lastDayOfMonth };
+        }
+        // Mặc định lấy hôm nay
+        else {
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            filter.created_at = { $gte: startOfDay, $lt: endOfDay };
+        }
+
+        // Phân trang
+        const pageNumber = parseInt(page) || 1;
+        const pageSize = 20;
+        const skip = (pageNumber - 1) * pageSize;
+
+        const [requests_pending, requests_in_progress, requests_resolved,
+            count_pending, count_in_progress, count_resolved, total] = await Promise.all([
+                Request.find({ ...filter, status: "Pending" })
+                    .sort({ created_at: -1, priority: 1 })
+                    .skip(skip)
+                    .limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+                Request.find({ ...filter, status: "InProgress" })
+                    .sort({ created_at: -1, priority: 1 })
+                    .skip(skip)
+                    .limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+                Request.find({ ...filter, status: "Resolved" })
+                    .sort({ created_at: -1, priority: 1 })
+                    .skip(skip)
+                    .limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+                Request.countDocuments({ ...filter, status: "Pending" }),
+                Request.countDocuments({ ...filter, status: "InProgress" }),
+                Request.countDocuments({ ...filter, status: "Resolved" }),
+                Request.countDocuments({ ...filter })
+            ]);
+
+        res.status(200).json({
+            ec: 200, em: "My Assigned Requests retrieved successfully", dt: {
+                total_requests: total,
+                pending: { requests: requests_pending, total: count_pending },
+                in_progress: { requests: requests_in_progress, total: count_in_progress },
+                resolved: { requests: requests_resolved, total: count_resolved }
+            }
+        });
     } catch (error) {
         res.status(500).json({ ec: 500, em: error.message });
     }

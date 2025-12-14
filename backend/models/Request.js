@@ -4,7 +4,7 @@ const { Schema, model } = mongoose;
 
 const historySchema = new Schema(
     {
-        status: { type: String, enum: ["Pending", "InProgress", "Resolved", "Rejected"] },
+        status: { type: String, enum: ["Pending", "Assigned", "InProgress", "Resolved", "Rejected"] },
         changed_at: { type: Date, default: Date.now },
         changed_by: { type: Schema.Types.ObjectId, ref: "Account", default: null }
     },
@@ -13,7 +13,15 @@ const historySchema = new Schema(
 const predictSchema = new Schema(
     {
         label_id: { type: String, required: true },
-        label: { type: String, required: true },
+        label: {
+            type: String, enum: ["Chính sách - Học bổng", "Chương trình thạc sĩ", "Chương trình đào tạo",
+                "Giấy tờ - Xác nhận", "Hành chính - Bảo hiểm", "Học phí - Kế toán",
+                "Hỗ trợ hệ thống - CNTT", "Hỗ trợ khó khăn cá nhân", "Khen thưởng - Kỷ luật",
+                "Ký túc xá", "Phúc khảo - Khảo thí", "Thư viện - Học liệu",
+                "Tư vấn hướng nghiệp", "Tư vấn học tập", "Tư vấn tâm lý",
+                "Yêu cầu học vụ", "Điểm rèn luyện"
+            ], required: true
+        },
         department_id: { type: Schema.Types.ObjectId, ref: "Department", required: true },
         score: { type: Number, required: true },
         is_used: { type: Boolean, default: false }
@@ -30,7 +38,6 @@ const attachmentSchema = new Schema(
     { _id: true }
 );
 
-
 const requestSchema = new Schema(
     {
         student_email: { type: String, required: true },
@@ -42,7 +49,7 @@ const requestSchema = new Schema(
         priority: { type: Number, enum: [1, 2, 3, 4], default: 3 },
         prediction: predictSchema,
         assigned_to: { type: Schema.Types.ObjectId, ref: "Account", default: null },
-        status: { type: String, enum: ["Pending", "InProgress", "Resolved", "Rejected"], default: "Pending" },
+        status: { type: String, enum: ["Pending", "Assigned", "InProgress", "Resolved"], default: "Pending" },
         attachments: [attachmentSchema],
         history: [historySchema]
     }

@@ -1,16 +1,49 @@
 import Account from "../models/Account.js";
+import Request from "../models/Request.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../controllers/authController.js";
 import transporter from "../services/send_email_smtp.js";
 import { supabase } from "../services/supabaseClient.js";
 
-
 // System only
 export const getAccountByDepartmentId = async (req, res) => {
   try {
     const { department_id } = req.params;
-    const accounts = await Account.find({ department_id: department_id, role: "Officer", work_status: "Active", active: true }).select("-password -department_id -role -work_status -active -updatedAt -createdAt -__v");
-    res.json({ mc: 200, me: "Accounts retrieved successfully", dt: accounts });
+    const accounts = await Account.find({ department_id: department_id, role: "Officer", work_status: "Active", active: true }).select("-password -department_id -role -work_status -active -updated_at -created_at -__v");
+    const result = await Promise.all(
+      accounts.map(async (account) => {
+        const [total, assignedCount, inProgressCount] = await Promise.all([
+          Request.countDocuments({
+            department_id,
+            assigned_to: account._id,
+            status: { $in: ["Assigned", "InProgress"] }
+          }),
+          Request.countDocuments({
+            department_id,
+            assigned_to: account._id,
+            status: "Assigned"
+          }),
+          Request.countDocuments({
+            department_id,
+            assigned_to: account._id,
+            status: "InProgress"
+          })
+        ]);
+
+        return {
+          ...account.toObject(),
+          total_requests_count: total,
+          assigned_requests_count: assignedCount,
+          inprogress_requests_count: inProgressCount
+        };
+      })
+    );
+    // SẮP XẾP TĂNG DẦN THEO TOTAL
+    result.sort(
+      (a, b) => a.total_requests_count - b.total_requests_count
+    )
+
+    res.json({ mc: 200, me: "Accounts retrieved successfully", dt: result });
   } catch (error) {
     res.status(500).json({ mc: 500, me: error.message });
   }
@@ -254,7 +287,7 @@ export const updateAccount = async (req, res) => {
 // Officer/Staff - Manage own profile
 export const getMyProfile = async (req, res) => {
   try {
-    const account = await Account.findById(req.account._id).select("-password -createdAt -updatedAt -__v").populate("department_id", "name");
+    const account = await Account.findById(req.account._id).select("-password -created_at -updated_at -__v").populate("department_id", "name");
     if (account) {
       res.json({ mc: 200, me: "Profile retrieved successfully", dt: account });
     } else {
@@ -301,7 +334,7 @@ export const updateMyProfile = async (req, res) => {
       gender,
       phone_number,
       avatar
-    }, { new: true }).select("-password -createdAt -updatedAt -__v");
+    }, { new: true }).select("-password -created_at -updated_at -__v");
     if (account) {
       res.json({ mc: 200, me: "My profile updated successfully", dt: account });
     } else {

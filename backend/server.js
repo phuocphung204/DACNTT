@@ -13,6 +13,7 @@ import authRoutes from "./routes/auth.js";
 import accountRoutes from "./routes/accounts.js";
 import departmentRoutes from "./routes/departments.js";
 import requestRoutes from "./routes/requests.js";
+import dashboardRoutes from "./routes/dashboard.js";
 
 // Services
 import { initGmailWatcher } from "./services/email_ggapi.js";
@@ -52,6 +53,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/accounts", accountRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/requests", requestRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
