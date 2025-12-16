@@ -2,6 +2,7 @@
 import { google } from "googleapis";
 import { simpleParser } from "mailparser";
 import axios from "axios";
+import FormData from "form-data";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -42,7 +43,7 @@ export async function initGmailWatcher() {
 
 const processedMessageIds = new Set();
 
-export const readUnreadEmails = async ( req, res) => {
+export const readUnreadEmails = async (req, res) => {
   try {
     const results = [];
     // Set lưu messageId đã xử lý
@@ -56,7 +57,7 @@ export const readUnreadEmails = async ( req, res) => {
 
     for (const msg of unreadMessages.data.messages) {
       if (processedMessageIds.has(msg.id)) continue;
-      
+
       const data = await gmail.users.messages.get({
         userId: "me",
         id: msg.id,
@@ -79,6 +80,31 @@ export const readUnreadEmails = async ( req, res) => {
         student_id
       });
 
+      const request_id = resquest.data.dt._id;
+      const attachments = parsed.attachments;
+      // Gửi attachments sang API
+      if (attachments?.length > 0) {
+        console.log(`Uploading ${attachments.length} attachments for request ${request_id}`);
+        for (const att of attachments) {
+          console.log("Uploading attachment:", att.filename);
+          try {
+            const form = new FormData();
+            form.append("attachment", att.content, {
+              filename: att.filename || "file.bin",
+              contentType: att.contentType,
+            });
+
+            await axios.post(
+              `http://localhost:${process.env.PORT}/api/requests/${request_id}/attachments`,
+              form,
+              { headers: form.getHeaders() }
+            );
+          } catch (err) {
+            console.error("Failed to upload attachment", att.filename, err.message);
+          }
+        }
+      }
+
       // Đánh dấu đã đọc
       await gmail.users.messages.modify({
         userId: "me",
@@ -90,6 +116,7 @@ export const readUnreadEmails = async ( req, res) => {
       processedMessageIds.add(msg.id);
       results.push(resquest.data);
     }
+    console.log(`Emails processed`);
     res.status(200).json({ ec: 200, em: "Emails processed", dt: results });
 
   } catch (error) {

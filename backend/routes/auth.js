@@ -3,15 +3,9 @@ import { google } from "googleapis";
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { protect, staff } from "../middlewares/auth.js";
-import { handleRegister, handleLogin, resetPassword, handleResetPassword } from "../controllers/authController.js";
+import { handleLogin, resetPassword, handleResetPassword } from "../controllers/authController.js";
 
 const router = express.Router();
-
-// @desc    Register a new user
-// @route   POST /api/auth/register
-// @access  Private/Staff chỉ nhân viên mới được phép tạo tài khoản
-router.post("/register", protect, staff, handleRegister); // đã check ok
 
 // @desc    Authenticate user & get token
 // @route   POST /api/auth/login
@@ -52,8 +46,8 @@ router.get("/google-link-account/callback", async (req, res) => {
     if (req.query.error) return res.status(400).send(`OAuth error: ${req.query.error}`);
     const code = req.query.code;
     if (!code) return res.status(400).send("No code returned from Google");
-    const { tokens } = await oauth2Client.getToken(code); // <-- thêm await
-    console.log("TOKENS", tokens);
+    const { tokens } = await oauth2Client.getToken(code);
+    console.log("Refresh Tokens", tokens.refresh_token);
     return res.json({
       message: "Lấy token xong — copy refresh_token vào .env GMAIL_REFRESH_TOKEN",
       refresh_token: tokens.refresh_token,

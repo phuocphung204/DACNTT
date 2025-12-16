@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import Account from '../models/Account.js';
+import multer from "multer";
 
 export const protect = async (req, res, next) => {
   let token;
@@ -22,12 +23,39 @@ export const protect = async (req, res, next) => {
   }
 };
 
+export const admin = (req, res, next) => {
+//   if (process.env.DEV_KEY === 'true') { next(); return; }
+  if (req.account && req.account.role === 'Admin') {
+    next();
+  } else {
+    res.status(401).json({ message: 'Not authorized as an admin' });
+  }
+};
+
 export const staff = (req, res, next) => {
 //   if (process.env.DEV_KEY === 'true') { next(); return; }
   if (req.account && req.account.role === 'Staff') {
     next();
   } else {
     res.status(401).json({ message: 'Not authorized as a staff' });
+  }
+};
+
+export const staff_or_admin = (req, res, next) => {
+//   if (process.env.DEV_KEY === 'true') { next(); return; }
+  if (req.account && (req.account.role === 'Staff' || req.account.role === 'Admin')) {
+    next();
+  } else {
+    res.status(401).json({ message: 'Not authorized as a staff or admin' });
+  }
+};
+
+export const staff_or_officer = (req, res, next) => {
+//   if (process.env.DEV_KEY === 'true') { next(); return; }
+  if (req.account && (req.account.role === 'Staff' || req.account.role === 'Officer')) {
+    next();
+  } else {
+    res.status(401).json({ message: 'Not authorized as a staff or officer' });
   }
 };
 
@@ -39,3 +67,7 @@ export const officer = (req, res, next) => {
     res.status(401).json({ message: 'Not authorized as an officer' });
   }
 };
+
+// dùng memory để upload trực tiếp lên Supabase
+const storage = multer.memoryStorage(); 
+export const upload = multer({ storage });
