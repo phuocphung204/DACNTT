@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "baseUrl": "src",
+    "paths": {
+      "#custom-hooks": ["custom-hooks/index-custom-hooks.js"],
+      "#schemas": ["schemas/index-schemas.js"],
+      "#services": ["src/services/index-services.js"],
+      "#services/*": ["src/services/*"],
+      "#utils": ["utils/index-utils.js"],
+      "#utils/*": ["utils/*"],
+      "#components/*": ["components/*"],
+      "#components": ["components/index-components.js"],
+      "#redux": ["redux/index-redux.js"],
+      "#redux/*": ["redux/*"]
+    }
+  }
+}

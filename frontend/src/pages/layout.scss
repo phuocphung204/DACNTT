@@ -1,0 +1,317 @@
+// ============== Admin Layout & Sidebar ==============
+$admin-sidebar-width: 260px;
+$admin-sidebar-collapsed-width: 72px;
+$admin-sidebar-bg: #111a28;
+$admin-sidebar-hover: #1b2537;
+$admin-sidebar-active: #0d6efd;
+$admin-sidebar-text: #c3cad7;
+$admin-sidebar-muted: #7e889c;
+$admin-header-height: 64px;
+
+.admin-wrapper {
+  min-height: 100vh;
+  display: grid;
+  grid-template-areas:
+    "sidebar header"
+    "sidebar main";
+  grid-template-columns: $admin-sidebar-width 1fr;
+  grid-template-rows: $admin-header-height 1fr;
+  transition: grid-template-columns 0.3s linear;
+  background: #f8fafc;
+
+  &.sidebar-collapsed {
+    grid-template-columns: $admin-sidebar-collapsed-width 1fr;
+  }
+}
+
+.app-header {
+  grid-area: header;
+  // position: sticky;
+  // top: 0;
+  // z-index: 1030;
+  // border-bottom: 1px solid #e5e7eb;
+  // background-color: #d1e2fb !important;
+  min-height: $admin-header-height;
+  box-shadow: 0 11px 16px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+
+  .navbar-nav .btn-link {
+    color: #1f2937;
+    text-decoration: none;
+
+    &:hover {
+      color: $admin-sidebar-active;
+    }
+  }
+
+  .nav-link-toggle {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 6px 10px;
+    background: #fff;
+    color: #111827;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+
+    &:hover {
+      background: #f3f4f6;
+      border-color: #d1d5db;
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba($admin-sidebar-active, 0.2);
+    }
+  }
+}
+
+.admin-main {
+  overflow-y: scroll;
+  grid-area: main;
+  min-height: 0;
+  background: #f8fafc;
+  // transition: width 0.3s ease;
+
+}
+
+.admin-sidebar__offcanvas {
+  min-width: $admin-sidebar-width;
+  max-width: $admin-sidebar-width !important;
+}
+
+.admin-sidebar {
+  grid-area: sidebar;
+  position: sticky;
+  top: 0;
+  bottom: 0;
+  height: 100vh;
+  color: $admin-sidebar-text;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: $admin-sidebar-width;
+  transition: width 0.3s linear;
+  container-name: admin-sidebar;
+  container-type: inline-size;
+
+  .admin-sidebar__brand {
+    height: $admin-header-height;
+  }
+
+  &.is-collapsed {
+    width: $admin-sidebar-collapsed-width;
+  }
+}
+
+.admin-sidebar__inner {
+  background: $admin-sidebar-bg;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.admin-sidebar__brand {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  padding: 18px 16px;
+  background: linear-gradient(135deg, #0f172a, #111a28);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 14px;
+}
+
+.admin-sidebar__brand-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+}
+
+.admin-sidebar__brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #f8fafc;
+  text-transform: none;
+}
+
+// .admin-sidebar__scroll {
+//   flex: 1 1 auto;
+//   min-height: 0;
+//   padding: 8px 14px 16px;
+// }
+
+.admin-sidebar__nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .admin-sidebar__section-label {
+    padding: 14px 12px 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: $admin-sidebar-muted;
+    letter-spacing: 0.08em;
+  }
+
+  .admin-sidebar__group {
+    margin-bottom: 6px;
+    border-radius: 12px;
+    background: transparent;
+
+    button {
+      display: flex;
+      width: 100%;
+    }
+
+    &.is-open {
+      .admin-sidebar__chevron {
+        transform: rotate(90deg);
+      }
+
+      button {
+        background: rgba($admin-sidebar-active, 0.35);
+      }
+    }
+  }
+
+
+
+  .admin-sidebar__link {
+    padding: 11px 14px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    letter-spacing: 0.1px;
+    background: transparent;
+    color: $admin-sidebar-text;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    transition:
+      background-color 0.18s ease,
+      color 0.18s ease,
+      border-color 0.18s ease,
+      box-shadow 0.18s ease;
+
+    &:hover {
+      background: $admin-sidebar-hover;
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.06);
+    }
+
+    &.is-active {
+      background: #0f172a;
+      color: #fff;
+      background-color: rgba($admin-sidebar-active, 0.35);
+    }
+
+    &.is-collapsed {
+      padding: 12px 0;
+      width: 100%;
+    }
+
+    &.is-collapsed .admin-sidebar__icon {
+      margin: 0 auto;
+    }
+  }
+
+  .admin-sidebar__icon {
+    font-size: 1rem;
+    color: inherit;
+  }
+
+  .admin-sidebar__label {
+    flex: 1;
+    text-align: left;
+    padding-left: 0.5rem;
+    font-size: 0.95rem;
+    color: inherit;
+  }
+
+  .admin-sidebar__chevron {
+    float: right;
+    font-size: 0.85rem;
+    color: $admin-sidebar-muted;
+    transition: transform 0.2s ease;
+  }
+
+  .admin-sidebar__badge {
+    background: rgba($admin-sidebar-active, 0.15);
+    color: #fff;
+    border: 1px solid rgba($admin-sidebar-active, 0.4);
+  }
+
+  .admin-sidebar__children {
+    white-space: nowrap;
+    margin-top: 5px;
+    gap: 2px;
+
+    .admin-sidebar__child {
+      padding: 8px 14px;
+      color: $admin-sidebar-muted;
+      font-size: 0.9rem;
+      display: block;
+      border-radius: 10px;
+
+      &:hover {
+        background: $admin-sidebar-hover;
+      }
+
+      &.is-active {
+        background: $admin-sidebar-hover;
+      }
+    }
+
+    .admin-sidebar__bullet {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+}
+
+@media (max-width: 990px) {
+  .admin-wrapper {
+    display: block;
+  }
+
+  .admin-sidebar {
+    display: none;
+  }
+}
+
+@container admin-sidebar (width > #{$admin-sidebar-width - 1px}) {
+
+  .admin-sidebar {
+
+    &__brand-text,
+    &__label,
+    &__chevron {
+      display: block;
+    }
+  }
+}
+
+
+@container admin-sidebar (width < #{$admin-sidebar-width - 2px}) {
+  .admin-sidebar {
+
+    &__brand-text,
+    &__label,
+    &__chevron {
+      display: none;
+    }
+  }
+}

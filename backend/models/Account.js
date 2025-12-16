@@ -17,7 +17,12 @@ const accountSchema = new Schema(
     active: { type: Boolean, default: true },
     department_id: { type: Schema.Types.ObjectId, ref: "Department" } // Nếu role là Officer, thì có department_id
   },
-  { timestamps: true }
+  {
+    timestamps: {
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+    },
+  }
 );
 
 //  Export 

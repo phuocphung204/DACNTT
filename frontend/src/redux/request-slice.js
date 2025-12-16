@@ -1,12 +1,12 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   list: [],
-  statusFilter: 'all',
+  statusFilter: "all",
 };
 
 const requestSlice = createSlice({
-  name: 'requests',
+  name: "requests",
   initialState,
   reducers: {
     setRequests(state, action) {
