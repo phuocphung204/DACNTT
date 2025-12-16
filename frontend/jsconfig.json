@@ -11,7 +11,9 @@
       "#components/*": ["components/*"],
       "#components": ["components/index-components.js"],
       "#redux": ["redux/index-redux.js"],
-      "#redux/*": ["redux/*"]
+      "#redux/*": ["redux/*"],
+      "#pages": ["pages/index-pages.js"],
+      "#pages/*": ["pages/*"]
     }
   }
 }
