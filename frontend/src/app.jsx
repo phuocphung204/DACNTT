@@ -14,8 +14,8 @@ function App() {
       <Outlet />
 
       <Routes>
-        <Route path="/dang-nhap" element={<LoginPage />} />
-        <Route path="/quen-mat-khau" element={<ResetPasswordPage />} />
+        <Route path="dang-nhap" element={<LoginPage />} />
+        <Route path="quen-mat-khau" element={<ResetPasswordPage />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Navigate to="/requests/overview" replace />} />
           {/* <Route path="/" element={<div style={{

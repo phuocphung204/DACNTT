@@ -1,0 +1,16 @@
+.notificationButton {
+  position: relative;
+
+  .notificationBadge {
+    position: absolute;
+    top: -3px;
+    left: 13px;
+    padding: 2px;
+  }
+}
+
+.popover {
+  font-size: 14px;
+  width: 280px;
+  height: 200px;
+}

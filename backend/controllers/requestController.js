@@ -283,7 +283,7 @@ export const assignRequestToOfficer = async (req, res) => {
 // Officer only
 export const getMyAssignedRequests = async (req, res) => {
 	try {
-		const { date, today, weekly, monthly, page } = req.query;
+		const { date, today, weekly, monthly, page, pageSize } = req.query;
 		const officer_id = req.user._id;
 
 		const filter = { assigned_to: officer_id };
@@ -327,23 +327,24 @@ export const getMyAssignedRequests = async (req, res) => {
 
 		// Phân trang
 		const pageNumber = parseInt(page) || 1;
-		const pageSize = 20;
-		const skip = (pageNumber - 1) * pageSize;
+		const pageSizeNumber = parseInt(pageSize) || 20;
+		const skip = (pageNumber - 1) * pageSizeNumber;
 
 		const [requests_pending, requests_in_progress, requests_resolved,
 			count_pending, count_in_progress, count_resolved, total] = await Promise.all([
-				Request.find({ ...filter, status: "Pending" })
+				// Request.find({ ...filter, status: "Pending" })
+				Request.find({ ...filter, status: "Assigned" })
 					.sort({ created_at: -1, priority: 1 })
 					.skip(skip)
-					.limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+					.limit(pageSizeNumber).select('_id student_email subject created_at updated_at status priority label assigned_to'),
 				Request.find({ ...filter, status: "InProgress" })
 					.sort({ created_at: -1, priority: 1 })
 					.skip(skip)
-					.limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+					.limit(pageSizeNumber).select('_id student_email subject created_at updated_at status priority label assigned_to'),
 				Request.find({ ...filter, status: "Resolved" })
 					.sort({ created_at: -1, priority: 1 })
 					.skip(skip)
-					.limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+					.limit(pageSizeNumber).select('_id student_email subject created_at updated_at status priority label assigned_to'),
 				Request.countDocuments({ ...filter, status: "Pending" }),
 				Request.countDocuments({ ...filter, status: "InProgress" }),
 				Request.countDocuments({ ...filter, status: "Resolved" }),
