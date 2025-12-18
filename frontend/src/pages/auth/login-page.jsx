@@ -8,12 +8,10 @@ import { toast } from "react-toastify";
 import "./auth.scss";
 
 import { loginSchema } from "#schemas";
-import { useRenderCount } from "custom-hooks/use-render-count";
 import { useLoginMutation } from "services/auth-service";
 import { useSelector } from "react-redux";
 
 const LoginPage = () => {
-  // useRenderCount("LoginPage");
   const navigate = useNavigate();
   const location = useLocation();
   const redirectPath = location.state?.from?.pathname || "/";
@@ -123,7 +121,7 @@ const LoginPage = () => {
                       label="Ghi nhớ đăng nhập"
                       className="text-muted"
                     />
-                    <Link to="/forgot-password" className="auth-link">
+                    <Link to="/quen-mat-khau" className="auth-link">
                       Quên mật khẩu?
                     </Link>
                   </div>

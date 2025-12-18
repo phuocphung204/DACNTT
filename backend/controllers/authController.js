@@ -20,7 +20,7 @@ export const generateToken = (_id) => {
 
 const resetPassword = async (req, res) => {
 	try {
-		const { email } = req.body;
+		const { email, redirectUrl } = req.body;
 		if (!email) {
 			return res.status(400).json({ ec: 200, em: "Email is required" });
 		}
@@ -32,7 +32,7 @@ const resetPassword = async (req, res) => {
 
 		// Tạo token reset
 		const resetToken = generateResetToken(account._id);
-		const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+		const resetLink = `${redirectUrl}?token=${resetToken}` || `${process.env.FRONTEND_URL}/quen-mat-khau?token=${resetToken}`;
 
 		// Gửi email
 		await transporter.sendMail({

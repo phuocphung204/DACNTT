@@ -13,6 +13,7 @@
     "overlayscrollbars-react": "0.5.6",
     "react": "18.2.0",
     "react-bootstrap": "2.10.5",
+    "react-bootstrap-pagination-control": "1.0.5",
     "react-dom": "18.2.0",
     "react-hook-form": "7.68.0",
     "react-icons": "5.2.1",
@@ -50,6 +51,12 @@
     ]
   },
   "imports": {
+    "#custom-hooks": [
+      "./src/custom-hooks/index-custom-hooks.js"
+    ],
+    "#custom-hooks/*": [
+      "./src/custom-hooks/*"
+    ],
     "#components": [
       "./src/components/index-components.js"
     ],
@@ -79,6 +86,9 @@
     ],
     "#redux/*": [
       "./src/redux/*"
+    ],
+    "#assets/*": [
+      "./src/assets/*"
     ]
   }
 }

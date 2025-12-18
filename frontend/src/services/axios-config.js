@@ -1,3 +1,4 @@
+import { TOKEN_KEY_NAME } from "#redux";
 import axios from "axios";
 
 export const BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000/api";
@@ -21,7 +22,7 @@ axiosInstance.interceptors.response.use(
     return error.response && error?.response?.data && Promise.reject(error?.response?.data);
   });
 
-export const getUserToken = () => JSON.parse(sessionStorage.getItem("user"))?.token || null;
+export const getUserToken = () => localStorage.getItem(TOKEN_KEY_NAME) || null;
 
 export const axiosBaseQuery = ({ baseUrl } = { baseUrl: "" }) =>
   async ({ url, method, data, params, headers }) => {
@@ -46,4 +47,4 @@ export const axiosBaseQuery = ({ baseUrl } = { baseUrl: "" }) =>
     } catch (axiosError) {
       return { error: axiosError }
     }
-  }
+  };

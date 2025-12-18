@@ -1,0 +1,98 @@
+import { backendApi } from "./backend-api";
+import { BASE_URL, getUserToken } from "./axios-config";
+
+const getAuthHeaders = () => {
+  const token = getUserToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+export const requestService = backendApi.injectEndpoints({
+  endpoints: (build) => ({
+    getRequests: build.query({
+      query: (params) => ({
+        url: "/requests",
+        method: "GET",
+        params,
+      }),
+    }),
+    getRequestById: build.query({
+      query: (requestId) => ({
+        url: `/requests/${requestId}`,
+        method: "GET",
+      }),
+    }),
+    applyPredictionByRequestId: build.mutation({
+      query: ({ requestId, assignedTo }) => ({
+        url: `/requests/use-prediction/${requestId}`,
+        method: "PUT",
+        data: { assigned_to: assignedTo },
+      }),
+    }),
+    assignRequestToOfficer: build.mutation({
+      query: ({ requestId, payload }) => ({
+        url: `/requests/assign/${requestId}`,
+        method: "PUT",
+        data: payload,
+      }),
+    }),
+    getDepartments: build.query({
+      query: () => ({
+        url: "/departments",
+        method: "GET",
+      }),
+    }),
+    getOfficersByDepartment: build.query({
+      query: (departmentId) => ({
+        url: `/accounts/department/${departmentId}`,
+        method: "GET",
+      }),
+    }),
+    sendReminder: build.mutation({
+      query: ({ requestId, subject, studentEmail }) => ({
+        url: `/requests/${requestId}/remind`,
+        method: "POST",
+        data: {
+          subject,
+          student_email: studentEmail,
+        },
+      }),
+    }),
+    downloadAttachment: build.mutation({
+      async queryFn({ requestId, attachmentId }) {
+        try {
+          const response = await fetch(
+            `${BASE_URL}/requests/${requestId}/attachments/${attachmentId}`,
+            { headers: getAuthHeaders() }
+          );
+          if (!response.ok) {
+            return {
+              error: {
+                status: response.status,
+                message: "Khong the tai tep dinh kem",
+              },
+            };
+          }
+          const blob = await response.blob();
+          return { data: blob };
+        } catch (error) {
+          return {
+            error: {
+              message: error?.message || "Khong the tai tep dinh kem",
+            },
+          };
+        }
+      },
+    }),
+  }),
+});
+
+export const {
+  useGetRequestsQuery,
+  useGetRequestByIdQuery,
+  useApplyPredictionByRequestIdMutation,
+  useAssignRequestToOfficerMutation,
+  useGetDepartmentsQuery,
+  useGetOfficersByDepartmentQuery,
+  useSendReminderMutation,
+  useDownloadAttachmentMutation,
+} = requestService;

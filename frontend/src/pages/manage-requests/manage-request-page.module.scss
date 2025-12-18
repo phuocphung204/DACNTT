@@ -1,0 +1,62 @@
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.headerTitle {
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.metaText {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.filtersCard {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+}
+
+.groupCard {
+  border: 1px solid #e9ecef;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.groupTitle {
+  font-weight: 600;
+}
+
+.suggestionBar {
+  background: #f8f9fa;
+  border: 1px dashed #ced4da;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.emailContent {
+  white-space: pre-wrap;
+}
+
+.attachmentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.rowDueSoon {
+  background-color: rgba(255, 193, 7, 0.1);
+}
+
+.rowOverdue {
+  background-color: rgba(220, 53, 69, 0.1);
+}

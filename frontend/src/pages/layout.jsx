@@ -8,6 +8,7 @@ import "./layout.scss";
 import "overlayscrollbars/overlayscrollbars.css";
 import { createPortal } from "react-dom";
 import { Flip, ToastContainer } from "react-toastify";
+import ModalDialog from "#components/common/modal-dialog";
 
 const Layout = () => {
   const [showOffcanvas, setShowOffcanvas] = useState(false);
@@ -75,8 +76,8 @@ const Layout = () => {
         transition={Flip}
       />, document.body)}
 
-
-      {/* <ModalDialog /> */}
+      {/* Modal Dialog */}
+      <ModalDialog />
     </>
   );
 }

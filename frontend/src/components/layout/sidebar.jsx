@@ -3,6 +3,8 @@ import { Collapse, Offcanvas } from "react-bootstrap";
 import { NavLink } from "react-router-dom";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
 
+import UserActions from "./user-actions";
+
 const scrollbarOptions = {
   scrollbars: {
     theme: "os-theme-light",
@@ -27,10 +29,7 @@ const NAV_ITEMS = [
   //     { id: "layout-custom", label: "Layout + Custom Area", to: "#" },
   //   ],
   // },
-  { id: "manage-products", label: "Quản lý sản phẩm", icon: "bi-box", to: "/admin/manage-products" },
-  { id: "manage-orders", label: "Quản lý đơn hàng", to: "/admin/manage-orders", icon: "bi-bag-check" },
-  { id: "manage-users", label: "Quản lý người dùng", to: "/admin/manage-users", icon: "bi-people" },
-  { id: "manage-discounts", label: "Quản lý mã giảm giá", to: "/admin/manage-discounts", icon: "bi-ticket" },
+  { id: "manage-requests", label: "Quản lý yêu cầu", icon: "bi-folder-check", to: "/quan-ly-yeu-cau" },
 ];
 
 const SidebarNav = ({ expanded, onToggle, collapsed }) => {
@@ -106,6 +105,8 @@ const SidebarNav = ({ expanded, onToggle, collapsed }) => {
           })}
         </nav>
       </OverlayScrollbarsComponent>
+      <hr className="mt-auto" />
+      <UserActions />
     </div>
   );
 };

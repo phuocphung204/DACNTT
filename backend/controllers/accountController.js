@@ -43,9 +43,9 @@ export const getAccountByDepartmentId = async (req, res) => {
       (a, b) => a.total_requests_count - b.total_requests_count
     )
 
-    res.json({ mc: 200, me: "Accounts retrieved successfully", dt: result });
+    res.json({ ec: 200, em: "Accounts retrieved successfully", dt: result });
   } catch (error) {
-    res.status(500).json({ mc: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };
 
@@ -66,9 +66,9 @@ export const getAllAccounts = async (req, res) => {
       filter.department_id = filter.department_id;
     }
     const accounts = await Account.find(filter).select("-password").populate("department_id", "name");
-    res.json({ mc: 200, me: "Accounts retrieved successfully", dt: accounts });
+    res.json({ ec: 200, em: "Accounts retrieved successfully", dt: accounts });
   } catch (error) {
-    res.status(500).json({ mc: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };
 
@@ -77,12 +77,12 @@ export const getAccountById = async (req, res) => {
     const { account_id } = req.params;
     const account = await Account.findById(account_id).select("-password").populate("department_id", "name");
     if (account) {
-      res.json({ mc: 200, me: "Account retrieved successfully", dt: account });
+      res.json({ ec: 200, em: "Account retrieved successfully", dt: account });
     } else {
-      res.status(404).json({ mc: 404, me: "Account not found" });
+      res.status(404).json({ ec: 404, em: "Account not found" });
     }
   } catch (error) {
-    res.status(500).json({ mc: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };
 
@@ -91,11 +91,12 @@ const checkEmailExists = async (email) => {
   const emailExists = await Account.findOne({ email: email });
   return !!emailExists;
 };
+
 export const createAccount = async (req, res) => {
   try {
     const { name, email, position, gender, role, department_id } = req.body;
     if (await checkEmailExists(email)) {
-      return res.status(400).json({ mc: 400, me: "Email already exists" });
+      return res.status(400).json({ ec: 400, em: "Email already exists" });
     }
     const newAccount = new Account({
       name,
@@ -127,7 +128,7 @@ export const createAccount = async (req, res) => {
 
           Your helpdesk account has been successfully created. Below are your account details:
 
-          Name: ${newAccount.name}
+          Naem: ${newAccount.name}
           Email: ${newAccount.email}
           Position: ${newAccount.position}
           Gender: ${newAccount.gender}
@@ -179,7 +180,7 @@ export const createAccount = async (req, res) => {
                 <p>Your helpdesk account has been successfully created. Here are your account details:</p>
 
                 <table width="100%" style="background:#f7f9ff; padding:12px; border-radius:8px;">
-                  <tr><td><strong>Name:</strong> ${newAccount.name}</td></tr>
+                  <tr><td><strong>Naem:</strong> ${newAccount.name}</td></tr>
                   <tr><td><strong>Email:</strong> ${newAccount.email}</td></tr>
                   <tr><td><strong>Position:</strong> ${newAccount.position}</td></tr>
                   <tr><td><strong>Gender:</strong> ${newAccount.gender}</td></tr>
@@ -248,16 +249,16 @@ export const createAccount = async (req, res) => {
       })
     ]);
     return res.status(201).json({
-      mc: 201, me: "Staff account created successfully", dt: {
+      ec: 201, em: "Staff account created successfully", dt: {
         _id: newAccount._id,
-        name: newAccount.name,
+        naem: newAccount.name,
         email: newAccount.email,
         role: newAccount.role,
         token: generateToken(newAccount._id)
       }
     });
   } catch (error) {
-    res.status(500).json({ mc: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };
 
@@ -275,12 +276,12 @@ export const updateAccount = async (req, res) => {
       active
     }, { new: true }).select("-password").populate("department_id", "name");
     if (account) {
-      res.json({ mc: 200, me: "Account updated successfully", dt: account });
+      res.json({ ec: 200, em: "Account updated successfully", dt: account });
     } else {
-      res.status(404).json({ mc: 404, me: "Account not found" });
+      res.status(404).json({ ec: 404, em: "Account not found" });
     }
   } catch (error) {
-    res.status(500).json({ mc: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };
 
@@ -289,12 +290,12 @@ export const getMyProfile = async (req, res) => {
   try {
     const account = await Account.findById(req.account._id).select("-password -created_at -updated_at -__v").populate("department_id", "name");
     if (account) {
-      res.json({ mc: 200, me: "Profile retrieved successfully", dt: account });
+      res.json({ ec: 200, em: "Profile retrieved successfully", dt: account });
     } else {
-      res.status(404).json({ mc: 404, me: "Account not found" });
+      res.status(404).json({ ec: 404, em: "Account not found" });
     }
   } catch (error) {
-    res.status(500).json({ mc: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };
 
@@ -311,16 +312,16 @@ export const updateMyPassword = async (req, res) => {
       const updatedAccount = await account.save();
 
       res.json({
-        mc: 200, me: "Password updated successfully", dt: {
+        ec: 200, em: "Password updated successfully", dt: {
           _id: updatedAccount._id,
-          name: updatedAccount.name
+          naem: updatedAccount.name
         }
       });
     } else {
-      res.status(404).json({ mc: 404, me: "Account not found" });
+      res.status(404).json({ ec: 404, em: "Account not found" });
     }
   } catch (error) {
-    res.status(500).json({ mc: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };
 
@@ -336,12 +337,12 @@ export const updateMyProfile = async (req, res) => {
       avatar
     }, { new: true }).select("-password -created_at -updated_at -__v");
     if (account) {
-      res.json({ mc: 200, me: "My profile updated successfully", dt: account });
+      res.json({ ec: 200, em: "My profile updated successfully", dt: account });
     } else {
-      res.status(404).json({ mc: 404, me: "Account not found" });
+      res.status(404).json({ ec: 404, em: "Account not found" });
     }
   } catch (error) {
-    res.status(500).json({ mc: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };
 
@@ -349,7 +350,7 @@ export const uploadAvatar = async (req, res) => {
   try {
     const file = req.file;
     if (!file) {
-      return res.status(400).json({ mc: 400, me: "No file uploaded" });
+      return res.status(400).json({ ec: 400, em: "No file uploaded" });
     }
     const filename = `${Date.now()}_${file.originalname}`;
     const { data, error } = await supabase.storage
@@ -360,15 +361,15 @@ export const uploadAvatar = async (req, res) => {
         contentType: file.mimetype
       });
     if (error) {
-      return res.status(500).json({ mc: 500, me: error.message });
+      return res.status(500).json({ ec: 500, em: error.message });
     }
     // tạo public URL
     const publicUrl = supabase.storage.from('uploads').getPublicUrl(filename).data.publicUrl;
     // Lưu vào trong Account
     req.account.avatar = publicUrl;
     await req.account.save();
-    res.status(200).json({ mc: 200, me: "Image uploaded successfully", dt: { publicUrl, data } });
+    res.status(200).json({ ec: 200, em: "Image uploaded successfully", dt: { publicUrl, data } });
   } catch (error) {
-    res.status(500).json({ mc: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };

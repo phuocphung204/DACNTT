@@ -208,7 +208,7 @@ export const getDashboardAdvanced = async (req, res) => {
 
     res.json({
       ec: 200,
-      me: "Lấy dashboard nâng cao thành công",
+      em: "Lấy dashboard nâng cao thành công",
       dt: {
         total_requests: result.total_requests[0]?.count || 0,
         by_status: result.by_status,
@@ -220,7 +220,7 @@ export const getDashboardAdvanced = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       ec: 500,
-      me: error.message
+      em: error.message
     });
   }
 };

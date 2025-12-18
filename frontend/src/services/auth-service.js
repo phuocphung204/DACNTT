@@ -23,7 +23,7 @@ export const authService = backendApi.injectEndpoints({
       invalidatesTags: ["User"],
       onQueryStarted: (_, { dispatch, queryFulfilled }) => {
         queryFulfilled.then(({ data }) => {
-          dispatch(setCredentials({ token: data.token }));
+          dispatch(setCredentials({ token: data.dt?.token, role: data.dt?.role }));
         }).catch((error) => {
           console.error("Login failed: ", error);
         });
@@ -45,6 +45,30 @@ export const authService = backendApi.injectEndpoints({
         }
       },
     }),
+
+    getMyProfile: build.query({
+      query: () => ({
+        url: "/accounts/me",
+        method: "GET",
+      }),
+      providesTags: ["User"],
+    }),
+
+    resetPasswordRequest: build.mutation({
+      query: (payload) => ({
+        url: '/auth/reset-password',
+        method: 'POST',
+        data: payload,
+      }),
+    }),
+
+    confirmResetPassword: build.mutation({
+      query: (payload) => ({
+        url: '/auth/reset-password/confirm',
+        method: 'POST',
+        data: payload,
+      }),
+    }),
   }),
 
   overwriteExistingEndpoints: false,
@@ -54,4 +78,10 @@ export const {
   useRegisterUserMutation,
   useLoginMutation,
   useLogoutMutation,
-} = authService 
+
+  useResetPasswordRequestMutation,
+  useConfirmResetPasswordMutation,
+
+  useGetMyProfileQuery,
+} = authService;
+

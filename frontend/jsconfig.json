@@ -3,6 +3,7 @@
     "baseUrl": "src",
     "paths": {
       "#custom-hooks": ["custom-hooks/index-custom-hooks.js"],
+      "#custom-hooks/*": ["custom-hooks/*"],
       "#schemas": ["schemas/index-schemas.js"],
       "#services": ["src/services/index-services.js"],
       "#services/*": ["src/services/*"],
@@ -13,7 +14,8 @@
       "#redux": ["redux/index-redux.js"],
       "#redux/*": ["redux/*"],
       "#pages": ["pages/index-pages.js"],
-      "#pages/*": ["pages/*"]
+      "#pages/*": ["pages/*"],
+      "#assets/*": ["assets/*"]
     }
   }
 }

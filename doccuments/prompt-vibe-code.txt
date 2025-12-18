@@ -1,0 +1,14 @@
+Quản lý yêu cầu:
+  + sắp xếp giảm dần theo thời gian gần nhất, hiển thị theo ngày hôm nay/ chọn 1 ngày trong tháng/ tuần này, tháng này: phân làm 4 nhóm mới nhận, đang xử lý, đã xử lý, sắp tới hạn;
+  + xem được chi tiết yêu cầu: nội dung email, tệp đính kèm
+  + 1 thanh ngang ở đầu email hiển thị gợi ý nhân đã được AI dự đoán (yêu cầu-mức độ ưu tiên), hiển thị đọc danh sách nhân viên phòng ban xử lý nhận đó (sắp xếp giảm dần task đang nhận/ chọn sẵn nhân viên ít task nhất) 2 nút dùng dự đoán-từ chối dự đoán;
+  + Nút tùy chọn tự phân nhân: Hiển thị danh sách nhân yêu -> chọn nhân phù hợp, hiển thị danh sách nhân viên phòng ban -> chọn phòng ban;
+  + Nút xác nhận phân công (gọi api phân công tự động or phân công thủ công)
+  + Lọc yêu cầu theo task đang xử lý, đã xử lý, sắp đến hạn - thêm nút thông báo nhắc nhở (gửi thông báo đến email-thông báo trên hệ thống)
+Giúp tôi triển khai các chức năng trên (triển khai cho manage-requests-page.jsx) 
+- Nếu có dùng modal dialog thì dùng modal dialog quản lý bởi userModalDialogStore
+- Sử dụng ui tiếng việt (tránh lỗi tiếng việt có dấu)
+- Luôn dùng css style của bootstrap và sử dụng react bootstrap, chỉ viết thêm scss theo scss module. Nếu dùng icon thì ưu tiên dùng icon của react-icons nên dùng của bootstrap
+- @tanstack/react-table dùng cho table
+- nếu tách component thì lưu trong components/manage-requests
+- Không sửa model trong backend, chỉ sửa khi cần thiết
