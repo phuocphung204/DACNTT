@@ -299,12 +299,6 @@ export const getMyAssignedRequests = async (req, res) => {
             lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
             filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
         }
-        // Tháng hiện tại
-        else if (monthly === 'true') {
-            const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-            filter.created_at = { $gte: firstDayOfMonth, $lt: lastDayOfMonth };
-        }
         // Mặc định lấy hôm nay
         else {
             const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
