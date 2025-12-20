@@ -147,7 +147,7 @@ export const getRequestById = async (req, res) => {
 // Staff only
 export const getAllRequests = async (req, res) => {
     try {
-        const { date, today, weekly, monthly, page } = req.query;
+        const { date, today, weekly } = req.query;
 
         const filter = {};
         const now = new Date();
@@ -175,12 +175,6 @@ export const getAllRequests = async (req, res) => {
             lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
             filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
         }
-        // Tháng hiện tại
-        else if (monthly === 'true') {
-            const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-            filter.created_at = { $gte: firstDayOfMonth, $lt: lastDayOfMonth };
-        }
         // Mặc định lấy hôm nay
         else {
             const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -188,25 +182,17 @@ export const getAllRequests = async (req, res) => {
             filter.created_at = { $gte: startOfDay, $lt: endOfDay };
         }
 
-        // Phân trang
-        const pageNumber = parseInt(page) || 1;
-        const pageSize = 20;
-        const skip = (pageNumber - 1) * pageSize;
-
         const [requests_pending, requests_in_progress, requests_resolved,
             count_pending, count_in_progress, count_resolved, total] = await Promise.all([
                 Request.find({ ...filter, status: "Pending" })
                     .sort({ created_at: -1, priority: 1 })
-                    .skip(skip)
-                    .limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+                    .select('_id student_email subject created_at updated_at status priority label assigned_to'),
                 Request.find({ ...filter, status: "InProgress" })
                     .sort({ created_at: -1, priority: 1 })
-                    .skip(skip)
-                    .limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+                    .select('_id student_email subject created_at updated_at status priority label assigned_to'),
                 Request.find({ ...filter, status: "Resolved" })
                     .sort({ created_at: -1, priority: 1 })
-                    .skip(skip)
-                    .limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+                    .select('_id student_email subject created_at updated_at status priority label assigned_to'),
                 Request.countDocuments({ ...filter, status: "Pending" }),
                 Request.countDocuments({ ...filter, status: "InProgress" }),
                 Request.countDocuments({ ...filter, status: "Resolved" }),
@@ -284,7 +270,7 @@ export const assignRequestToOfficer = async (req, res) => {
 // Officer only
 export const getMyAssignedRequests = async (req, res) => {
     try {
-        const { date, today, weekly, monthly, page } = req.query;
+        const { date, today, weekly } = req.query;
         const officer_id = req.user._id;
 
         const filter = { assigned_to: officer_id };
@@ -326,26 +312,18 @@ export const getMyAssignedRequests = async (req, res) => {
             filter.created_at = { $gte: startOfDay, $lt: endOfDay };
         }
 
-        // Phân trang
-        const pageNumber = parseInt(page) || 1;
-        const pageSize = 20;
-        const skip = (pageNumber - 1) * pageSize;
-
-        const [requests_pending, requests_in_progress, requests_resolved,
-            count_pending, count_in_progress, count_resolved, total] = await Promise.all([
-                Request.find({ ...filter, status: "Pending" })
+        const [requests_assigned, requests_in_progress, requests_resolved,
+            count_assigned, count_in_progress, count_resolved, total] = await Promise.all([
+                Request.find({ ...filter, status: "Assigned" })
                     .sort({ created_at: -1, priority: 1 })
-                    .skip(skip)
-                    .limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+                    .select('_id student_email subject created_at updated_at status priority label assigned_to'),
                 Request.find({ ...filter, status: "InProgress" })
                     .sort({ created_at: -1, priority: 1 })
-                    .skip(skip)
-                    .limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+                    .select('_id student_email subject created_at updated_at status priority label assigned_to'),
                 Request.find({ ...filter, status: "Resolved" })
                     .sort({ created_at: -1, priority: 1 })
-                    .skip(skip)
-                    .limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
-                Request.countDocuments({ ...filter, status: "Pending" }),
+                    .select('_id student_email subject created_at updated_at status priority label assigned_to'),
+                Request.countDocuments({ ...filter, status: "Assigned" }),
                 Request.countDocuments({ ...filter, status: "InProgress" }),
                 Request.countDocuments({ ...filter, status: "Resolved" }),
                 Request.countDocuments({ ...filter })
@@ -354,7 +332,7 @@ export const getMyAssignedRequests = async (req, res) => {
         res.status(200).json({
             ec: 200, em: "My Assigned Requests retrieved successfully", dt: {
                 total_requests: total,
-                pending: { requests: requests_pending, total: count_pending },
+                assigned: { requests: requests_assigned, total: count_assigned },
                 in_progress: { requests: requests_in_progress, total: count_in_progress },
                 resolved: { requests: requests_resolved, total: count_resolved }
             }
