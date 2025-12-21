@@ -30,6 +30,8 @@ const NAV_ITEMS = [
   //   ],
   // },
   { id: "manage-requests", label: "Quản lý yêu cầu", icon: "bi-folder-check", to: "/quan-ly-yeu-cau" },
+  { id: "officer-requests", label: "Yêu cầu", icon: "bi-person-badge", to: "/yeu-cau" },
+  { id: "socket-io-setup", label: "Socket.io Setup", icon: "bi-plug", to: "/socket-io-setup" },
 ];
 
 const SidebarNav = ({ expanded, onToggle, collapsed }) => {

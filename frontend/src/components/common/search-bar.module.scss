@@ -1,0 +1,91 @@
+$border-color: #e5e7eb;
+$text-muted: #6c757d;
+
+.searchBarContainer {
+  min-width: 260px;
+}
+
+.searchInputGroup {
+  border: 1px solid $border-color;
+  border-radius: 999px !important;
+  background-color: #fff;
+  padding: 2px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+
+  &:focus-within {
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    border-color: #d0d7de;
+  }
+
+  :global(.form-control) {
+    border: none;
+    box-shadow: none !important;
+    padding-left: 0;
+    font-weight: 600;
+
+    &:focus {
+      border: none;
+      box-shadow: none;
+    }
+  }
+
+  :global(.input-group-text) {
+    background-color: transparent;
+    border: none;
+    color: $text-muted;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
+.searchIcon {
+  color: #9ca3af;
+}
+
+.searchAction {
+  padding: 0 4px;
+}
+
+.searchActionBtn {
+  border: none;
+  background: transparent;
+  color: #6c757d;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    color: #ffc107;
+  }
+}
+
+.shortcutHint {
+  gap: 6px;
+  font-size: 12px !important;
+  color: $text-muted;
+  background-color: #f8fafc !important;
+  border-radius: 999px !important;
+  padding-right: 12px;
+  padding-left: 12px;
+
+  .shortcutKey,
+  .shortcutLabel {
+    line-height: 1;
+    padding: 4px 6px;
+    border: 1px solid $border-color;
+    border-radius: 6px;
+    background-color: #fff;
+    font-weight: 600;
+  }
+
+  .shortcutKey {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+}

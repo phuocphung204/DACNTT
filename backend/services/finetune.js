@@ -12,7 +12,7 @@ let nlp = null;
 export const initModel = async () => {
     try {
         if (!nlp) {
-            console.log("Loading local ONNX model...");
+            // console.log("Loading local ONNX model...");
 
             nlp = await pipeline(
                 'text-classification',
@@ -20,7 +20,7 @@ export const initModel = async () => {
                 // ,{ progress_callback: console.log }
             );
 
-            console.log("Local model loaded");
+            // console.log("Local model loaded");
         }
 
         return nlp;

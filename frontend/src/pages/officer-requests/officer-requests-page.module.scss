@@ -1,0 +1,38 @@
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.heading {
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.metaText {
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
+.previewBlock {
+  border: 1px solid #e9ecef;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+}
+
+.previewItem {
+  margin-bottom: 0.5rem;
+}
+
+.previewItem:last-child {
+  margin-bottom: 0;
+}
+
+.previewLabel {
+  color: #6c757d;
+  font-size: 0.875rem;
+}

@@ -10,14 +10,14 @@ export const createRequest = async (req, res) => {
 
 		// Tiền xử lý dữ liệu content
 		const preprocessedContent = preprocessText(content);
-		console.log("Preprocessed Content:", preprocessedContent);
+		// console.log("Preprocessed Content:", preprocessedContent);
 
 		// Gọi model để dự đoán nhãn
 		const predictionResponse = await predict_label(preprocessedContent);
 		if (predictionResponse.ec !== 200) {
 			return res.status(predictionResponse.ec).json({ ec: predictionResponse.ec, em: predictionResponse.em });
 		}
-		console.log("Prediction Response:", predictionResponse.dt);
+		// console.log("Prediction Response:", predictionResponse.dt);
 
 		// Lấy nhãn dự đoán
 		const label_id = predictionResponse.dt.id;
@@ -55,11 +55,11 @@ export const uploadAttachments = async (req, res) => {
 
 		const request = await Request.findById(request_id);
 		if (!request) {
-			return res.status(404).json({ mc: 404, me: "Request not found" });
+			return res.status(404).json({ ec: 404, em: "Request not found" });
 		}
 
 		if (!file) {
-			return res.status(400).json({ mc: 400, me: "No attachment uploaded" });
+			return res.status(400).json({ ec: 400, em: "No attachment uploaded" });
 		}
 
 		const filename = `${Date.now()}_${file.originalname}`;
@@ -68,7 +68,7 @@ export const uploadAttachments = async (req, res) => {
 		const { data, error } = await supabase.storage
 			.from("attachments")
 			.upload(filename, file.buffer, {
-				cacheControl: '3600',
+				cacheControl: "3600",
 				upsert: false,
 				contentType: file.mimetype,
 			});
@@ -81,12 +81,12 @@ export const uploadAttachments = async (req, res) => {
 		await request.save();
 
 		if (error) {
-			return res.status(500).json({ mc: 500, me: error.message });
+			return res.status(500).json({ ec: 500, em: error.message });
 		}
 
 		return res.status(200).json({
-			mc: 200,
-			me: "Attachment uploaded successfully",
+			ec: 200,
+			em: "Attachment uploaded successfully",
 			dt: {
 				stored_name: filename,
 				original_name: file.originalname,
@@ -96,7 +96,7 @@ export const uploadAttachments = async (req, res) => {
 		});
 
 	} catch (error) {
-		return res.status(500).json({ mc: 500, me: error.message });
+		return res.status(500).json({ ec: 500, em: error.message });
 	}
 };
 
@@ -159,13 +159,13 @@ export const getAllRequests = async (req, res) => {
 			filter.created_at = { $gte: startOfDay, $lt: endOfDay };
 		}
 		// Hôm nay
-		else if (today === 'true') {
+		else if (today === "true") {
 			const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 			const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
 			filter.created_at = { $gte: startOfDay, $lt: endOfDay };
 		}
 		// Tuần hiện tại
-		else if (weekly === 'true') {
+		else if (weekly === "true") {
 			const firstDayOfWeek = new Date(now);
 			const day = firstDayOfWeek.getDay() || 7; // CN = 7
 			firstDayOfWeek.setDate(firstDayOfWeek.getDate() - day + 1);
@@ -175,7 +175,7 @@ export const getAllRequests = async (req, res) => {
 			filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
 		}
 		// Tháng hiện tại
-		else if (monthly === 'true') {
+		else if (monthly === "true") {
 			const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 			const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 			filter.created_at = { $gte: firstDayOfMonth, $lt: lastDayOfMonth };
@@ -197,15 +197,15 @@ export const getAllRequests = async (req, res) => {
 				Request.find({ ...filter, status: "Pending" })
 					.sort({ created_at: -1, priority: 1 })
 					.skip(skip)
-					.limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+					.limit(pageSize).select("_id student_email subject created_at updated_at status priority label assigned_to"),
 				Request.find({ ...filter, status: "InProgress" })
 					.sort({ created_at: -1, priority: 1 })
 					.skip(skip)
-					.limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+					.limit(pageSize).select("_id student_email subject created_at updated_at status priority label assigned_to"),
 				Request.find({ ...filter, status: "Resolved" })
 					.sort({ created_at: -1, priority: 1 })
 					.skip(skip)
-					.limit(pageSize).select('_id student_email subject created_at updated_at status priority label assigned_to'),
+					.limit(pageSize).select("_id student_email subject created_at updated_at status priority label assigned_to"),
 				Request.countDocuments({ ...filter, status: "Pending" }),
 				Request.countDocuments({ ...filter, status: "InProgress" }),
 				Request.countDocuments({ ...filter, status: "Resolved" }),
@@ -283,27 +283,30 @@ export const assignRequestToOfficer = async (req, res) => {
 // Officer only
 export const getMyAssignedRequests = async (req, res) => {
 	try {
-		const { date, today, weekly, monthly, page, pageSize } = req.query;
-		const officer_id = req.user._id;
-
+		// TODO: triển khai lọc nâng cao priority, status sau
+		const { timeRange, page, pageSize, priority, status } = req.query;
+		const officer_id = req.account._id;
+		console.log("Officer ID:", officer_id);
+		console.log("Query Params:", priority, status);
 		const filter = { assigned_to: officer_id };
 		const now = new Date();
 
 		// Ngày cụ thể
-		if (date) {
+		if (timeRange === "date") {
+			const { date } = req.query;
 			const selectedDate = new Date(date);
 			const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
 			const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
 			filter.created_at = { $gte: startOfDay, $lt: endOfDay };
 		}
 		// Hôm nay
-		else if (today === 'true') {
+		else if (timeRange === "today") {
 			const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 			const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
 			filter.created_at = { $gte: startOfDay, $lt: endOfDay };
 		}
 		// Tuần hiện tại
-		else if (weekly === 'true') {
+		else if (timeRange === "weekly") {
 			const firstDayOfWeek = new Date(now);
 			const day = firstDayOfWeek.getDay() || 7; // CN = 7
 			firstDayOfWeek.setDate(firstDayOfWeek.getDate() - day + 1);
@@ -313,7 +316,7 @@ export const getMyAssignedRequests = async (req, res) => {
 			filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
 		}
 		// Tháng hiện tại
-		else if (monthly === 'true') {
+		else if (timeRange === "monthly") {
 			const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 			const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 			filter.created_at = { $gte: firstDayOfMonth, $lt: lastDayOfMonth };
@@ -330,33 +333,43 @@ export const getMyAssignedRequests = async (req, res) => {
 		const pageSizeNumber = parseInt(pageSize) || 20;
 		const skip = (pageNumber - 1) * pageSizeNumber;
 
-		const [requests_pending, requests_in_progress, requests_resolved,
-			count_pending, count_in_progress, count_resolved, total] = await Promise.all([
-				// Request.find({ ...filter, status: "Pending" })
-				Request.find({ ...filter, status: "Assigned" })
-					.sort({ created_at: -1, priority: 1 })
-					.skip(skip)
-					.limit(pageSizeNumber).select('_id student_email subject created_at updated_at status priority label assigned_to'),
-				Request.find({ ...filter, status: "InProgress" })
-					.sort({ created_at: -1, priority: 1 })
-					.skip(skip)
-					.limit(pageSizeNumber).select('_id student_email subject created_at updated_at status priority label assigned_to'),
-				Request.find({ ...filter, status: "Resolved" })
-					.sort({ created_at: -1, priority: 1 })
-					.skip(skip)
-					.limit(pageSizeNumber).select('_id student_email subject created_at updated_at status priority label assigned_to'),
-				Request.countDocuments({ ...filter, status: "Pending" }),
-				Request.countDocuments({ ...filter, status: "InProgress" }),
-				Request.countDocuments({ ...filter, status: "Resolved" }),
-				Request.countDocuments({ ...filter })
-			]);
+		// const [requests_pending, requests_in_progress, requests_resolved,
+		// 	count_pending, count_in_progress, count_resolved, total] = await Promise.all([
+		// 		// Request.find({ ...filter, status: "Pending" })
+		// 		Request.find({ ...filter, status: "Assigned" })
+		// 			.sort({ created_at: -1, priority: 1 })
+		// 			.skip(skip)
+		// 			.limit(pageSizeNumber).select("_id student_email subject created_at updated_at status priority label assigned_to"),
+		// 		Request.find({ ...filter, status: "InProgress" })
+		// 			.sort({ created_at: -1, priority: 1 })
+		// 			.skip(skip)
+		// 			.limit(pageSizeNumber).select("_id student_email subject created_at updated_at status priority label assigned_to"),
+		// 		Request.find({ ...filter, status: "Resolved" })
+		// 			.sort({ created_at: -1, priority: 1 })
+		// 			.skip(skip)
+		// 			.limit(pageSizeNumber).select("_id student_email subject created_at updated_at status priority label assigned_to"),
+		// 		// Request.countDocuments({ ...filter, status: "Pending" }),
+		// 		Request.countDocuments({ ...filter, status: "Assigned" }),
+		// 		Request.countDocuments({ ...filter, status: "InProgress" }),
+		// 		Request.countDocuments({ ...filter, status: "Resolved" }),
+		// 		Request.countDocuments({ ...filter })
+		// 	]);
+		const [myAssignedRequests, total] = await Promise.all([
+			Request.find({ ...filter })
+				.sort({ created_at: -1, priority: 1 })
+				.skip(skip)
+				.limit(pageSizeNumber).select("_id student_email subject created_at updated_at status priority label assigned_to"),
+			Request.countDocuments({ ...filter })
+		]);
 
 		res.status(200).json({
 			ec: 200, em: "My Assigned Requests retrieved successfully", dt: {
+				// total_requests: total,
+				// pending: { requests: requests_pending, total: count_pending },
+				// in_progress: { requests: requests_in_progress, total: count_in_progress },
+				// resolved: { requests: requests_resolved, total: count_resolved }
 				total_requests: total,
-				pending: { requests: requests_pending, total: count_pending },
-				in_progress: { requests: requests_in_progress, total: count_in_progress },
-				resolved: { requests: requests_resolved, total: count_resolved }
+				requests: myAssignedRequests
 			}
 		});
 	} catch (error) {

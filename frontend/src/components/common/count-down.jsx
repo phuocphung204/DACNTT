@@ -12,7 +12,7 @@ const CountDown = ({ children, durationSeconds, callback }) => {
       setCurrentSeconds(currentSeconds - 1);
     }, 1000);
     return () => clearTimeout(timerId);
-  }, [currentSeconds]);
+  }, [currentSeconds, callback]);
   return (
     <>
       {typeof children === "function" ? children(currentSeconds) : children}

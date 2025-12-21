@@ -13,6 +13,7 @@
     "overlayscrollbars-react": "0.5.6",
     "react": "18.2.0",
     "react-bootstrap": "2.10.5",
+    "react-bootstrap-daterangepicker": "8.0.0",
     "react-bootstrap-pagination-control": "1.0.5",
     "react-dom": "18.2.0",
     "react-hook-form": "7.68.0",
@@ -23,6 +24,8 @@
     "react-toastify": "10.0.5",
     "redux": "5.0.1",
     "sass": "1.77.0",
+    "socket.io-client": "4.8.1",
+    "use-immer": "0.11.0",
     "zod": "4.2.1",
     "zustand": "5.0.9"
   },
@@ -69,6 +72,9 @@
     "#pages/*": [
       "./src/pages/*"
     ],
+    "#utils": [
+      "./src/utils/index-utils.js"
+    ],
     "#utils/*": [
       "./src/utils/*"
     ],
@@ -89,6 +95,9 @@
     ],
     "#assets/*": [
       "./src/assets/*"
+    ],
+    "#styles/*": [
+      "./src/styles/*"
     ]
   }
 }

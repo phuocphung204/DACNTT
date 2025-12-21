@@ -37,7 +37,7 @@ router.get("/link/google", (req, res) => {
     scope: ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.modify"],
     prompt: "consent"
   });
-  console.log("Open this URL in browser to authorize:", url);
+  // console.log("Open this URL in browser to authorize:", url);
   res.redirect(url);
 });
 
@@ -47,7 +47,7 @@ router.get("/google-link-account/callback", async (req, res) => {
     const code = req.query.code;
     if (!code) return res.status(400).send("No code returned from Google");
     const { tokens } = await oauth2Client.getToken(code);
-    console.log("Refresh Tokens", tokens.refresh_token);
+    // console.log("Refresh Tokens", tokens.refresh_token);
     return res.json({
       message: "Lấy token xong — copy refresh_token vào .env GMAIL_REFRESH_TOKEN",
       refresh_token: tokens.refresh_token,

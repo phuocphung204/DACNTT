@@ -61,5 +61,22 @@ const requestSchema = new Schema(
 	}
 );
 
+// --- INDEXES ---
+// Tối ưu hóa hiệu suất truy vấn
+
+// 1. Cho trang quản lý của Staff (getAllRequests)
+// Lọc theo status, created_at và sort theo created_at, priority
+requestSchema.index({ status: 1, created_at: -1, priority: 1 });
+
+// 2. Cho trang quản lý của Officer (getMyAssignedRequests)
+// Lọc theo assigned_to, created_at và sort theo created_at, priority
+requestSchema.index({ assigned_to: 1, created_at: -1, priority: 1 });
+
+// 3. Để đếm số lượng request của officer một cách hiệu quả (getAccountByDepartmentId)
+requestSchema.index({ department_id: 1, assigned_to: 1, status: 1 });
+
+// 4. Cho dashboard (getDashboardAdvanced) và các truy vấn chỉ lọc theo thời gian
+requestSchema.index({ created_at: 1 });
+
 const Request = mongoose.models.Request || model("Request", requestSchema);
 export default Request;

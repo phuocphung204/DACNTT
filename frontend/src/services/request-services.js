@@ -35,6 +35,8 @@ export const requestService = backendApi.injectEndpoints({
         data: payload,
       }),
     }),
+
+    // TODO: cần chuyển getDepartments và getOfficersByDepartment nơi khác
     getDepartments: build.query({
       query: () => ({
         url: "/departments",
@@ -47,6 +49,7 @@ export const requestService = backendApi.injectEndpoints({
         method: "GET",
       }),
     }),
+
     sendReminder: build.mutation({
       query: ({ requestId, subject, studentEmail }) => ({
         url: `/requests/${requestId}/remind`,
@@ -83,7 +86,20 @@ export const requestService = backendApi.injectEndpoints({
         }
       },
     }),
+
+    /**
+     * Các endpoint cho Officer
+     */
+    getMyAssignedRequests: build.query({
+      query: (params) => ({
+        url: "/requests/my-assigned-requests",
+        method: "GET",
+        params,
+      }),
+    }),
   }),
+
+  overrideExisting: false,
 });
 
 export const {
@@ -95,4 +111,7 @@ export const {
   useGetOfficersByDepartmentQuery,
   useSendReminderMutation,
   useDownloadAttachmentMutation,
+
+  // Các endpoint cho Officer
+  useGetMyAssignedRequestsQuery,
 } = requestService;

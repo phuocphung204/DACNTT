@@ -1,0 +1,48 @@
+$yellow-color: #ffc107;
+
+.btnFilterOption {
+  position: relative;
+
+  /* Định nghĩa các biến cục bộ cho button */
+  /* Tăng độ đặc hiệu (specificity) bằng cách kết hợp với class .btn để đảm bảo ghi đè */
+  &,
+  &:global(.btn) {
+    --bs-btn-color: #6c757d;
+    // --bs-btn-bg: #fff;
+    // --bs-btn-border-color: #6c757d;
+    --bs-btn-hover-color: #{$yellow-color};
+    // --bs-btn-hover-bg: #fff;
+    // --bs-btn-hover-border-color: #{$yellow-color};
+    --bs-btn-active-color: #{$yellow-color};
+    // --bs-btn-active-bg: #fff;
+    --bs-btn-active-border-color: transparent;
+
+    /* Áp dụng trực tiếp các thuộc tính để chắc chắn nhận diện */
+    color: var(--bs-btn-color);
+    background-color: var(--bs-btn-bg);
+    border-color: var(--bs-btn-border-color);
+  }
+
+  :first-child {
+    margin-right: 5px;
+    margin-top: 2px;
+  }
+}
+
+.parentFontSizeContainer {
+  font-size: 12px;
+
+  * {
+    font-size: 1em !important;
+  }
+}
+
+.badgeFilterCount {
+  position: absolute !important;
+  top: 0;
+  right: -2px;
+  transform: scale(.45);
+  padding: 2px 3px;
+  font-size: 7px;
+  text-align: center;
+}

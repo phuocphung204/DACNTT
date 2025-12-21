@@ -5,9 +5,9 @@ import Department from "../models/Department.js";
 export const getAllDepartments = async (req, res) => {
   try {
     const departments = await Department.find({});
-    res.status(200).json({ ec: 200, me: "Departments fetched successfully", dt: departments });
+    res.status(200).json({ ec: 200, em: "Departments fetched successfully", dt: departments });
   } catch (error) {
-    res.status(500).json({ ec: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };
 
@@ -16,12 +16,12 @@ export const getDepartmentById = async (req, res) => {
     const { department_id } = req.params;
     const department = await Department.findById(department_id);
     if (!department) {
-      return res.status(404).json({ ec: 404, me: "Department not found" });
+      return res.status(404).json({ ec: 404, em: "Department not found" });
     }
-    res.status(200).json({ ec: 200, me: "Department fetched successfully", dt: department });
+    res.status(200).json({ ec: 200, em: "Department fetched successfully", dt: department });
   }
   catch (error) {
-    res.status(500).json({ ec: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };
 
@@ -35,9 +35,9 @@ export const createDepartment = async (req, res) => {
       description,
       labels: labels || [],
     });
-    res.status(201).json({ ec: 201, me: "Department created successfully", dt: newDepartment });
+    res.status(201).json({ ec: 201, em: "Department created successfully", dt: newDepartment });
   } catch (error) {
-    res.status(500).json({ ec: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };
 
@@ -47,11 +47,11 @@ export const updateDepartment = async (req, res) => {
     const { name, description, labels } = req.body;
     const department = await Department.findByIdAndUpdate(department_id, { name, description, labels }, { new: true });
     if (!department) {
-      return res.status(404).json({ ec: 404, me: "Department not found" });
+      return res.status(404).json({ ec: 404, em: "Department not found" });
     }
-    res.status(200).json({ ec: 200, me: "Department updated successfully", dt: department });
+    res.status(200).json({ ec: 200, em: "Department updated successfully", dt: department });
   } catch (error) {
-    res.status(500).json({ ec: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };
 
@@ -60,10 +60,10 @@ export const deleteDepartment = async (req, res) => {
     const { department_id } = req.params;
     const department = await Department.findByIdAndDelete(department_id);
     if (!department) {
-      return res.status(404).json({ ec: 404, me: "Department not found" });
+      return res.status(404).json({ ec: 404, em: "Department not found" });
     }
-    res.status(200).json({ ec: 200, me: "Department deleted successfully", dt: department });
+    res.status(200).json({ ec: 200, em: "Department deleted successfully", dt: department });
   } catch (error) {
-    res.status(500).json({ ec: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };

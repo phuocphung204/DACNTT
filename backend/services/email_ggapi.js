@@ -38,7 +38,7 @@ export async function initGmailWatcher() {
     },
   });
 
-  console.log("Gmail watcher initialized");
+  // console.log("Gmail watcher initialized");
 }
 
 const processedMessageIds = new Set();
@@ -84,9 +84,9 @@ export const readUnreadEmails = async (req, res) => {
       const attachments = parsed.attachments;
       // Gửi attachments sang API
       if (attachments?.length > 0) {
-        console.log(`Uploading ${attachments.length} attachments for request ${request_id}`);
+        // console.log(`Uploading ${attachments.length} attachments for request ${request_id}`);
         for (const att of attachments) {
-          console.log("Uploading attachment:", att.filename);
+          // console.log("Uploading attachment:", att.filename);
           try {
             const form = new FormData();
             form.append("attachment", att.content, {
@@ -111,12 +111,12 @@ export const readUnreadEmails = async (req, res) => {
         id: msg.id,
         requestBody: { removeLabelIds: ["UNREAD"] }
       });
-      console.log("Messeage id:", msg.id, "marked as read.");
+      // console.log("Messeage id:", msg.id, "marked as read.");
       // Thêm vào set đã xử lý
       processedMessageIds.add(msg.id);
       results.push(resquest.data);
     }
-    console.log(`Emails processed`);
+    // console.log(`Emails processed`);
     res.status(200).json({ ec: 200, em: "Emails processed", dt: results });
 
   } catch (error) {

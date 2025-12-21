@@ -1,10 +1,10 @@
 import { TOKEN_KEY_NAME } from "#redux";
 import axios from "axios";
 
-export const BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000/api";
+export const BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
 export const axiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: `${BASE_URL}/api`,
   timeout: 10000,
   headers: { "Content-Type": "application/json" },
 })
@@ -18,7 +18,7 @@ axiosInstance.interceptors.response.use(
     // Any status codes that falls outside the range of 2xx cause this function to trigger
     // Do something with response error
     if (error?.code === "ERR_NETWORK") return Promise.reject({ ec: -1, em: "Lỗi mạng" })
-    console.log(error);
+    // console.log(error);
     return error.response && error?.response?.data && Promise.reject(error?.response?.data);
   });
 
@@ -42,6 +42,9 @@ export const axiosBaseQuery = ({ baseUrl } = { baseUrl: "" }) =>
         params,
         headers,
         withCredentials: true, // nếu cần cookie
+        paramsSerializer: {
+          indexes: null // null: Không dùng index/ngoặc -> ids=1&ids=2
+        }
       })
       return { data: result }
     } catch (axiosError) {

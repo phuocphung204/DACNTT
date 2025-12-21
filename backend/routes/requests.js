@@ -7,6 +7,10 @@ import { protect, staff, upload, staff_or_officer, officer } from "../middleware
 const router = express.Router();
 
 // Staff
+router.get("/test", (req, res) => {
+  // console.log("Test request route");
+  // console.log(req.query);
+});
 
 // Use prediction by request ID
 // @route   PUT /api/requests/use-prediction/:request_id
@@ -35,6 +39,11 @@ router.post("/", createRequest);
 // @access  System
 router.post("/pubsub", readUnreadEmails);
 
+// Get my assigned requests
+// @route   GET /api/requests/my-assigned-requests?date=<date>&today=false&weekly=false&monthly=false&page=<page>
+// @access  Private/Officer
+router.get("/my-assigned-requests", protect, officer, getMyAssignedRequests);
+
 // Upload attachment to request by ID
 // @route   POST /api/requests/:request_id/attachments
 // @access  System
@@ -57,7 +66,8 @@ router.get("/:request_id/attachments/:attachment_id", protect, officer, download
 // Get my assigned requests
 // @route   GET /api/requests/my-assigned-requests?date=<date>&today=false&weekly=false&monthly=false&page=<page>
 // @access  Private/Officer
-router.get("/my-assigned-requests", protect, officer, getMyAssignedRequests);
+// Đã chuyển lên trên
+// router.get("/my-assigned-requests", protect, officer, getMyAssignedRequests);
 
 // TODO: thêm các hàm truy vấn thông tin sinh viên đã gửi yêu cầu
 

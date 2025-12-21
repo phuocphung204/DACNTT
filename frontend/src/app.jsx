@@ -1,12 +1,17 @@
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { enableMapSet } from "immer";
 
 import Layout from "./pages/layout";
 import OverviewPage from "./pages/overview-page/overview-page";
 import RequestListPage from "./pages/request-list-page/request-list-page";
-import RequestDetailPage from "./pages/request-detail-page/request-detail-page";
+import RequestDetailsPage from "./pages/request-details/request-details-page";
 import LoginPage from "#pages/auth/login-page";
 import ManageRequestPage from "#pages/manage-requests/manage-request-page";
 import ResetPasswordPage from "#pages/auth/reset-password-page";
+import OfficerRequestsPage from "#pages/officer-requests/officer-requests-page";
+import SocketIoSetupPage from "#pages/socket-io-setup/socket-io-setup-page";
+
+enableMapSet();
 
 function App() {
   return (
@@ -24,8 +29,10 @@ function App() {
         }}></div>} /> */}
           <Route path="/requests/overview" element={<OverviewPage />} />
           <Route path="/requests/processing" element={<RequestListPage />} />
-          <Route path="/requests/:id" element={<RequestDetailPage />} />
+          <Route path="/yeu-cau/:id" element={<RequestDetailsPage />} />
           <Route path="/quan-ly-yeu-cau" element={<ManageRequestPage />} />
+          <Route path="/yeu-cau" element={<OfficerRequestsPage />} />
+          <Route path="socket-io-setup" element={<SocketIoSetupPage />} />
         </Route>
       </Routes>
     </>

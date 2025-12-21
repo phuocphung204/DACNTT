@@ -1,0 +1,56 @@
+.messageList {
+  max-height: 420px;
+  min-height: 260px;
+  overflow-y: auto;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.messageRow {
+  display: flex;
+  margin-bottom: 12px;
+}
+
+.messageRowOfficer {
+  justify-content: flex-end;
+}
+
+.messageBubble {
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 10px 12px;
+  max-width: 80%;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08);
+}
+
+.messageBubbleOfficer {
+  background: #e7f1ff;
+  border-color: #cfe2ff;
+}
+
+.messageMeta {
+  font-size: 12px;
+  color: #6c757d;
+  margin-bottom: 4px;
+}
+
+.messageContent {
+  white-space: pre-wrap;
+}
+
+.chatAttachment {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #0d6efd;
+  word-break: break-word;
+}
+
+.composeArea {
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fdfdfe;
+}
