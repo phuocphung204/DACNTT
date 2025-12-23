@@ -6,6 +6,18 @@ dotenv.config();
 
 const { Schema, model } = mongoose;
 
+export const ACCOUNT_ROLES = Object.freeze({
+  OFFICER: "Officer",
+  STAFF: "Staff",
+  ADMIN: "Admin"
+});
+
+export const WORK_STATUS = Object.freeze({
+  ACTIVE: "Active",
+  ON_LEAVE: "OnLeave",
+  RETIRED: "Retired"
+});
+
 // Generate hashed password
 const salt = await bcrypt.genSalt(10);
 const hashedPassword = await bcrypt.hash(process.env.DEFAULT_PASSWORD, salt);

@@ -2,6 +2,8 @@ import Request from "../models/Request.js";
 import Department from "../models/Department.js";
 import { preprocessText, predict_label } from "../services/finetune.js";
 import { supabase } from "../services/supabaseClient.js";
+import { NOTIFICATION_TYPES } from "../models/Notification.js";
+import { createNotification, sendNotification } from "./notification-controller.js";
 
 // System
 export const createRequest = async (req, res) => {
@@ -146,26 +148,27 @@ export const getRequestById = async (req, res) => {
 // Staff only
 export const getAllRequests = async (req, res) => {
 	try {
-		const { date, today, weekly, monthly, page } = req.query;
+		const { timeRange } = req.query;
 
 		const filter = {};
 		const now = new Date();
 
 		// Ngày cụ thể
-		if (date) {
+		if (timeRange === "date") {
+			const { date } = req.query;
 			const selectedDate = new Date(date);
 			const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
 			const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
 			filter.created_at = { $gte: startOfDay, $lt: endOfDay };
 		}
 		// Hôm nay
-		else if (today === "true") {
+		else if (timeRange === "today") {
 			const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 			const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
 			filter.created_at = { $gte: startOfDay, $lt: endOfDay };
 		}
 		// Tuần hiện tại
-		else if (weekly === "true") {
+		else if (timeRange === "weekly") {
 			const firstDayOfWeek = new Date(now);
 			const day = firstDayOfWeek.getDay() || 7; // CN = 7
 			firstDayOfWeek.setDate(firstDayOfWeek.getDate() - day + 1);
@@ -174,12 +177,6 @@ export const getAllRequests = async (req, res) => {
 			lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
 			filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
 		}
-		// Tháng hiện tại
-		else if (monthly === "true") {
-			const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-			const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-			filter.created_at = { $gte: firstDayOfMonth, $lt: lastDayOfMonth };
-		}
 		// Mặc định lấy hôm nay
 		else {
 			const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -187,25 +184,17 @@ export const getAllRequests = async (req, res) => {
 			filter.created_at = { $gte: startOfDay, $lt: endOfDay };
 		}
 
-		// Phân trang
-		const pageNumber = parseInt(page) || 1;
-		const pageSize = 20;
-		const skip = (pageNumber - 1) * pageSize;
-
 		const [requests_pending, requests_in_progress, requests_resolved,
 			count_pending, count_in_progress, count_resolved, total] = await Promise.all([
 				Request.find({ ...filter, status: "Pending" })
 					.sort({ created_at: -1, priority: 1 })
-					.skip(skip)
-					.limit(pageSize).select("_id student_email subject created_at updated_at status priority label assigned_to"),
+					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
 				Request.find({ ...filter, status: "InProgress" })
 					.sort({ created_at: -1, priority: 1 })
-					.skip(skip)
-					.limit(pageSize).select("_id student_email subject created_at updated_at status priority label assigned_to"),
+					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
 				Request.find({ ...filter, status: "Resolved" })
 					.sort({ created_at: -1, priority: 1 })
-					.skip(skip)
-					.limit(pageSize).select("_id student_email subject created_at updated_at status priority label assigned_to"),
+					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
 				Request.countDocuments({ ...filter, status: "Pending" }),
 				Request.countDocuments({ ...filter, status: "InProgress" }),
 				Request.countDocuments({ ...filter, status: "Resolved" }),
@@ -249,6 +238,23 @@ export const usePredictionByRequestId = async (req, res) => {
 		await request.save();
 		//TODO Mặc định trung bình: Sửa sau nếu thêm được dự đoán priority từ model
 
+
+		// Gửi thông báo đến officer được gán
+		const sender = {
+			user_id: req.account._id,
+			name: req.account.name,
+			avatar: req.account.avatar
+		}
+		const notification = await createNotification({
+			sender: sender,
+			recipient_id: assigned_to,
+			type: NOTIFICATION_TYPES.REQUEST_ASSIGNED,
+			entity_id: request._id,
+			data: {
+				request_subject: request.subject
+			},
+		});
+		sendNotification(assigned_to, notification);
 		res.status(200).json({ ec: 200, em: "Prediction marked as used", dt: request });
 	} catch (error) {
 		res.status(500).json({ ec: 500, em: error.message });
@@ -283,11 +289,9 @@ export const assignRequestToOfficer = async (req, res) => {
 // Officer only
 export const getMyAssignedRequests = async (req, res) => {
 	try {
-		// TODO: triển khai lọc nâng cao priority, status sau
-		const { timeRange, page, pageSize, priority, status } = req.query;
+		const { timeRange } = req.query;
 		const officer_id = req.account._id;
-		console.log("Officer ID:", officer_id);
-		console.log("Query Params:", priority, status);
+
 		const filter = { assigned_to: officer_id };
 		const now = new Date();
 
@@ -315,12 +319,6 @@ export const getMyAssignedRequests = async (req, res) => {
 			lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
 			filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
 		}
-		// Tháng hiện tại
-		else if (timeRange === "monthly") {
-			const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-			const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-			filter.created_at = { $gte: firstDayOfMonth, $lt: lastDayOfMonth };
-		}
 		// Mặc định lấy hôm nay
 		else {
 			const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -328,48 +326,29 @@ export const getMyAssignedRequests = async (req, res) => {
 			filter.created_at = { $gte: startOfDay, $lt: endOfDay };
 		}
 
-		// Phân trang
-		const pageNumber = parseInt(page) || 1;
-		const pageSizeNumber = parseInt(pageSize) || 20;
-		const skip = (pageNumber - 1) * pageSizeNumber;
-
-		// const [requests_pending, requests_in_progress, requests_resolved,
-		// 	count_pending, count_in_progress, count_resolved, total] = await Promise.all([
-		// 		// Request.find({ ...filter, status: "Pending" })
-		// 		Request.find({ ...filter, status: "Assigned" })
-		// 			.sort({ created_at: -1, priority: 1 })
-		// 			.skip(skip)
-		// 			.limit(pageSizeNumber).select("_id student_email subject created_at updated_at status priority label assigned_to"),
-		// 		Request.find({ ...filter, status: "InProgress" })
-		// 			.sort({ created_at: -1, priority: 1 })
-		// 			.skip(skip)
-		// 			.limit(pageSizeNumber).select("_id student_email subject created_at updated_at status priority label assigned_to"),
-		// 		Request.find({ ...filter, status: "Resolved" })
-		// 			.sort({ created_at: -1, priority: 1 })
-		// 			.skip(skip)
-		// 			.limit(pageSizeNumber).select("_id student_email subject created_at updated_at status priority label assigned_to"),
-		// 		// Request.countDocuments({ ...filter, status: "Pending" }),
-		// 		Request.countDocuments({ ...filter, status: "Assigned" }),
-		// 		Request.countDocuments({ ...filter, status: "InProgress" }),
-		// 		Request.countDocuments({ ...filter, status: "Resolved" }),
-		// 		Request.countDocuments({ ...filter })
-		// 	]);
-		const [myAssignedRequests, total] = await Promise.all([
-			Request.find({ ...filter })
-				.sort({ created_at: -1, priority: 1 })
-				.skip(skip)
-				.limit(pageSizeNumber).select("_id student_email subject created_at updated_at status priority label assigned_to"),
-			Request.countDocuments({ ...filter })
-		]);
+		const [requests_assigned, requests_in_progress, requests_resolved,
+			count_assigned, count_in_progress, count_resolved, total] = await Promise.all([
+				Request.find({ ...filter, status: "Assigned" })
+					.sort({ created_at: -1, priority: 1 })
+					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
+				Request.find({ ...filter, status: "InProgress" })
+					.sort({ created_at: -1, priority: 1 })
+					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
+				Request.find({ ...filter, status: "Resolved" })
+					.sort({ created_at: -1, priority: 1 })
+					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
+				Request.countDocuments({ ...filter, status: "Assigned" }),
+				Request.countDocuments({ ...filter, status: "InProgress" }),
+				Request.countDocuments({ ...filter, status: "Resolved" }),
+				Request.countDocuments({ ...filter })
+			]);
 
 		res.status(200).json({
 			ec: 200, em: "My Assigned Requests retrieved successfully", dt: {
-				// total_requests: total,
-				// pending: { requests: requests_pending, total: count_pending },
-				// in_progress: { requests: requests_in_progress, total: count_in_progress },
-				// resolved: { requests: requests_resolved, total: count_resolved }
 				total_requests: total,
-				requests: myAssignedRequests
+				assigned: { requests: requests_assigned, total: count_assigned },
+				in_progress: { requests: requests_in_progress, total: count_in_progress },
+				resolved: { requests: requests_resolved, total: count_resolved }
 			}
 		});
 	} catch (error) {

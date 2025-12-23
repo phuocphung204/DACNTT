@@ -1,8 +1,10 @@
 import express from "express";
 
 import { protect, upload, admin, staff_or_admin, staff_or_officer } from "../middlewares/auth.js";
-import { getAllAccounts, getAccountByDepartmentId, updateMyPassword, getAccountById,
-        getMyProfile, updateMyProfile, createAccount, updateAccount, uploadAvatar } from "../controllers/accountController.js";
+import {
+        getAllAccounts, getAccountByDepartmentId, updateMyPassword, getAccountById,
+        getMyProfile, updateMyProfile, createAccount, updateAccount, uploadAvatar
+} from "../controllers/accountController.js";
 
 const router = express.Router();
 
@@ -58,8 +60,8 @@ router.get("/:account_id", protect, staff_or_admin, getAccountById);
 router.post("/", protect, admin, createAccount);
 
 // @desc    Update account by ID
-// @route   PUT /api/accounts/:account_id
+// @route   PATCH /api/accounts/:account_id
 // @access  Private/Admin
-router.put("/:account_id", protect, admin, updateAccount);
+router.patch("/:account_id", protect, admin, updateAccount);
 
 export default router;

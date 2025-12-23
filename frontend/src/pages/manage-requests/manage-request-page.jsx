@@ -1,19 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Badge,
-  Button,
-  ButtonGroup,
-  Card,
-  Col,
-  Collapse,
-  Form,
-  ListGroup,
-  Row,
-  Spinner,
-  Table,
-  ToggleButton,
-} from "react-bootstrap";
+import { Alert, Badge, Button, Card, Form, ListGroup, Nav, Spinner, Table } from "react-bootstrap";
+import { PaginationControl } from "react-bootstrap-pagination-control";
 import {
   BsArrowRepeat,
   BsBell,
@@ -22,15 +9,12 @@ import {
   BsPersonPlus,
   BsXCircle,
 } from "react-icons/bs";
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { toast } from "react-toastify";
 
 import { userModalDialogStore, useShallow } from "#custom-hooks";
 import {
+  useApplyPredictionByRequestIdMutation,
   useAssignRequestToOfficerMutation,
   useDownloadAttachmentMutation,
   useGetDepartmentsQuery,
@@ -38,17 +22,12 @@ import {
   useGetRequestByIdQuery,
   useGetRequestsQuery,
   useSendReminderMutation,
-  useApplyPredictionByRequestIdMutation,
 } from "#services/request-services";
+import { formatDateTime } from "#utils/format";
+import { PRIORITY, TIME_RANGE } from "#components/variables";
+import FilterClient from "#components/common/filter-cliend";
 
 import styles from "./manage-request-page.module.scss";
-
-const TIME_FILTERS = [
-  { value: "today", label: "Hôm nay" },
-  { value: "date", label: "Chọn ngày" },
-  { value: "weekly", label: "Tuần này" },
-  { value: "monthly", label: "Tháng này" },
-];
 
 const PRIORITY_LABELS = {
   1: "Khẩn cấp",
@@ -86,17 +65,6 @@ const PRIORITY_SLA_HOURS = {
 };
 
 const DUE_SOON_MS = 24 * 60 * 60 * 1000;
-
-const padValue = (value) => String(value).padStart(2, "0");
-
-const formatDateTime = (value) => {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return `${date.getFullYear()}-${padValue(date.getMonth() + 1)}-${padValue(
-    date.getDate()
-  )} ${padValue(date.getHours())}:${padValue(date.getMinutes())}`;
-};
 
 const normalizeStatus = (status) => {
   if (status === "Assigned") return "InProgress";
@@ -136,25 +104,19 @@ const computeDueState = (status, dueAt, now) => {
 };
 
 const getErrorMessage = (error, fallback) =>
-  error?.em || error?.me || error?.message || fallback;
+  error?.em || error?.message || fallback;
 
-// const toAsciiLabel = (value) => {
-//   if (!value) return "";
-//   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-// };
+const toAsciiLabel = (value) => {
+  if (!value) return "";
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
 
 const sortByCreatedAtDesc = (a, b) => {
   const first = new Date(a?.created_at || a?.createdAt || 0).getTime();
   const second = new Date(b?.created_at || b?.createdAt || 0).getTime();
   return second - first;
 };
-
-const RequestTable = ({
-  data,
-  onViewDetail,
-  onSendReminder,
-  remindLoadingId,
-}) => {
+const RequestTable = ({ data, onViewDetail, onSendReminder, remindLoadingId }) => {
   const columns = useMemo(
     () => [
       {
@@ -226,7 +188,7 @@ const RequestTable = ({
         },
       },
       {
-        header: "Hành động",
+        header: "Thao tác",
         id: "actions",
         cell: ({ row }) => {
           const isLoading = remindLoadingId === row.original._id;
@@ -305,39 +267,6 @@ const RequestTable = ({
     </Table>
   );
 };
-
-const RequestGroupCard = ({
-  title,
-  subtitle,
-  variant,
-  data,
-  onViewDetail,
-  onSendReminder,
-  remindLoadingId,
-}) => (
-  <Card className={`mb-3 ${styles.groupCard}`}>
-    <Card.Header className={styles.groupHeader}>
-      <div>
-        <div className={styles.groupTitle}>{title}</div>
-        {subtitle && <div className={styles.metaText}>{subtitle}</div>}
-      </div>
-      <Badge bg={variant}>{data.length}</Badge>
-    </Card.Header>
-    <Card.Body>
-      {data.length === 0 ? (
-        <div className="text-muted small">Không có yêu cầu</div>
-      ) : (
-        <RequestTable
-          data={data}
-          onViewDetail={onViewDetail}
-          onSendReminder={onSendReminder}
-          remindLoadingId={remindLoadingId}
-        />
-      )}
-    </Card.Body>
-  </Card>
-);
-
 const RequestDetailModalBody = ({ requestId, onAssigned }) => {
   const [selectedOfficer, setSelectedOfficer] = useState("");
   const [showManual, setShowManual] = useState(false);
@@ -380,16 +309,6 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
     )[0];
   }, [predictionOfficers]);
 
-  useEffect(() => {
-    setSelectedOfficer("");
-  }, [predictionDepartmentId]);
-
-  useEffect(() => {
-    if (!selectedOfficer && leastLoadedPredictionOfficer?._id) {
-      setSelectedOfficer(leastLoadedPredictionOfficer._id);
-    }
-  }, [leastLoadedPredictionOfficer, selectedOfficer]);
-
   const { data: departmentsResponse } = useGetDepartmentsQuery(undefined, {
     skip: !showManual,
   });
@@ -428,6 +347,12 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
       (a, b) => (a.total_requests_count || 0) - (b.total_requests_count || 0)
     )[0];
   }, [manualOfficers]);
+
+  useEffect(() => {
+    if (!selectedOfficer && leastLoadedPredictionOfficer?._id) {
+      setSelectedOfficer(leastLoadedPredictionOfficer._id);
+    }
+  }, [leastLoadedPredictionOfficer, selectedOfficer]);
 
   useEffect(() => {
     if (!manualForm.departmentId) return;
@@ -473,7 +398,6 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
   const [assignRequest, { isLoading: manualLoading }] =
     useAssignRequestToOfficerMutation();
   const [downloadAttachment] = useDownloadAttachmentMutation();
-
   const handleUsePrediction = async () => {
     if (!selectedOfficer) {
       toast.error("Vui lòng chọn nhân viên phù hợp");
@@ -585,7 +509,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
             AI gợi ý
           </Badge>
           <span className="fw-semibold">
-            Nhãn: {predictionLabel || "Chưa có"}
+            Nhãn: {toAsciiLabel(predictionLabel) || "Chưa có"}
           </span>
           <span className="text-muted">
             Ưu tiên: {getPriorityLabel(detail?.priority)}
@@ -596,10 +520,10 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
             </span>
           )}
         </div>
-        <Row className="g-2 align-items-end mt-2">
-          <Col lg={6}>
+        <div className="row g-2 align-items-end mt-2">
+          <div className="col-lg-6">
             <Form.Label className="small mb-1">
-              Danh sách nhân viên phòng ban
+              Nhân viên phòng ban
             </Form.Label>
             <Form.Select
               size="sm"
@@ -610,12 +534,12 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
               <option value="">Chọn nhân viên</option>
               {predictionOfficers.map((officer) => (
                 <option key={officer._id} value={officer._id}>
-                  {officer.name} - Đang nhận: {officer.total_requests_count || 0}
+                  {officer.name} - đang nhận: {officer.total_requests_count || 0}
                 </option>
               ))}
             </Form.Select>
-          </Col>
-          <Col lg={6} className="d-flex justify-content-end gap-2">
+          </div>
+          <div className="col-lg-6 d-flex justify-content-end gap-2">
             <Button
               size="sm"
               variant="success"
@@ -643,19 +567,17 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
               onClick={() => setShowManual((prev) => !prev)}
             >
               <BsPersonPlus className="me-1" />
-              Tùy chọn tự phân loại
+              Tự phân nhân
             </Button>
-          </Col>
-        </Row>
+          </div>
+        </div>
       </div>
 
-      <Collapse in={showManual}>
+      <div className={`collapse ${showManual ? "show" : ""}`}>
         <div className="mt-3 border rounded p-3 bg-light">
-          <div className="d-flex justify-content-between align-items-center mb-2">
-            <div className="fw-semibold">Tùy chọn tự phân loại</div>
-          </div>
-          <Row className="g-2">
-            <Col md={6}>
+          <div className="fw-semibold mb-2">Phân công thủ công</div>
+          <div className="row g-2">
+            <div className="col-md-6">
               <Form.Label className="small mb-1">Phòng ban</Form.Label>
               <Form.Select
                 size="sm"
@@ -676,8 +598,8 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
                   </option>
                 ))}
               </Form.Select>
-            </Col>
-            <Col md={6}>
+            </div>
+            <div className="col-md-6">
               <Form.Label className="small mb-1">Nhãn yêu cầu</Form.Label>
               <Form.Select
                 size="sm"
@@ -693,12 +615,12 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
                 <option value="">Chọn nhãn yêu cầu</option>
                 {manualLabels.map((item) => (
                   <option key={item.label_id} value={item.label}>
-                    {item.label}
+                    {toAsciiLabel(item.label)}
                   </option>
                 ))}
               </Form.Select>
-            </Col>
-            <Col md={6}>
+            </div>
+            <div className="col-md-6">
               <Form.Label className="small mb-1">Ưu tiên</Form.Label>
               <Form.Select
                 size="sm"
@@ -716,8 +638,8 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
                   </option>
                 ))}
               </Form.Select>
-            </Col>
-            <Col md={6}>
+            </div>
+            <div className="col-md-6">
               <Form.Label className="small mb-1">Nhân viên</Form.Label>
               <Form.Select
                 size="sm"
@@ -733,12 +655,12 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
                 <option value="">Chọn nhân viên</option>
                 {manualOfficers.map((officer) => (
                   <option key={officer._id} value={officer._id}>
-                    {officer.name} - Đang nhận: {officer.total_requests_count || 0}
+                    {officer.name} - đang nhận: {officer.total_requests_count || 0}
                   </option>
                 ))}
               </Form.Select>
-            </Col>
-          </Row>
+            </div>
+          </div>
           <div className="d-flex justify-content-end mt-3">
             <Button
               size="sm"
@@ -753,10 +675,10 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
             </Button>
           </div>
         </div>
-      </Collapse>
+      </div>
 
-      <Row className="g-3 mt-3">
-        <Col lg={7}>
+      <div className="row g-3 mt-3">
+        <div className="col-lg-7">
           <Card className="h-100">
             <Card.Body>
               <div className="d-flex flex-wrap gap-2 mb-2">
@@ -780,8 +702,8 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
               </div>
             </Card.Body>
           </Card>
-        </Col>
-        <Col lg={5}>
+        </div>
+        <div className="col-lg-5">
           <Card className="mb-3">
             <Card.Body>
               <Card.Title className="h6 mb-3">Tệp đính kèm</Card.Title>
@@ -832,7 +754,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
               <div className="d-flex justify-content-between mb-2">
                 <span className="text-muted small">Nhãn</span>
                 <span className="fw-semibold">
-                  {detail.label || "Chưa gán"}
+                  {toAsciiLabel(detail.label) || "Chưa gán"}
                 </span>
               </div>
               <div className="d-flex justify-content-between">
@@ -843,12 +765,11 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
               </div>
             </Card.Body>
           </Card>
-        </Col>
-      </Row>
+        </div>
+      </div>
     </div>
   );
 };
-
 const ManageRequestPage = () => {
   const { push } = userModalDialogStore(
     useShallow((state) => ({
@@ -856,28 +777,45 @@ const ManageRequestPage = () => {
     }))
   );
 
-  const [filterMode, setFilterMode] = useState("today");
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const now = new Date();
-    return now.toISOString().split("T")[0];
+  // const [filterValues, setFilterValues] = useState({
+  //   timeRange: ["today"],
+  //   priority: [],
+  //   status: [],
+  //   date: { value: [] },
+  // });
+
+  const [clientFilterValues, setClientFilterValues] = useState({
+    priority: [],
+    status: [],
   });
-  const [statusFilter, setStatusFilter] = useState("all");
+
+  const [activeTab, setActiveTab] = useState("pending");
+  const [pageSize, setPageSize] = useState(20);
+  const [pageByTab, setPageByTab] = useState({
+    pending: 1,
+    inProgress: 1,
+    resolved: 1,
+  });
   const [remindLoadingId, setRemindLoadingId] = useState("");
 
-  const requestParams = useMemo(() => {
-    const params = { page: 1 };
-    if (filterMode === "today") {
-      params.today = true;
-    } else if (filterMode === "weekly") {
-      params.weekly = true;
-    } else if (filterMode === "monthly") {
-      params.monthly = true;
-    } else if (filterMode === "date") {
-      if (!selectedDate) return null;
-      params.date = selectedDate;
-    }
-    return params;
-  }, [filterMode, selectedDate]);
+  // const timeRange = filterValues.timeRange?.[0] || "today";
+  // const requestParams = useMemo(() => {
+  //   const params = {};
+  //   if (timeRange === "today") {
+  //     params.today = true;
+  //   } else if (timeRange === "weekly") {
+  //     params.weekly = true;
+  //   } else if (timeRange === "monthly") {
+  //     params.monthly = true;
+  //   } else if (timeRange === "date") {
+  //     const selectedDate = filterValues.date?.value?.[0];
+  //     if (!selectedDate) return null;
+  //     params.date = selectedDate;
+  //   }
+  //   return params;
+  // }, [timeRange, filterValues.date]);
+
+  const [requestParams, setRequestParams] = useState({ timeRange: "today" });
 
   const {
     data: requestsResponse,
@@ -900,93 +838,100 @@ const ManageRequestPage = () => {
     };
   }, [requestsResponse]);
 
-  const preparedBuckets = useMemo(() => {
+  const filteredBuckets = useMemo(() => {
     const now = Date.now();
-    const mapList = (list, fallbackStatus) =>
+    const applyDecorators = (list, fallbackStatus) =>
       [...list].map((item) => {
         const status = normalizeStatus(item.status || fallbackStatus);
         const dueAt = getDueAt(item);
         const dueState = computeDueState(status, dueAt, now);
-        return {
-          ...item,
-          status,
-          dueAt,
-          dueState,
-        };
+        return { ...item, status, dueAt, dueState };
       });
 
-    const pending = mapList(requestBuckets.pending, "Pending");
-    const inProgress = mapList(requestBuckets.inProgress, "InProgress");
-    const resolved = mapList(requestBuckets.resolved, "Resolved");
+    // const filterPriority = (list) => {
+    //   if (!filterValues.priority || filterValues.priority.length === 0) return list;
+    //   return list.filter((item) =>
+    //     filterValues.priority.includes(String(item.priority || ""))
+    //   );
+    // };
 
-    const dueSoon = [...pending, ...inProgress]
-      .filter((item) => item.dueState === "due")
-      .sort(sortByCreatedAtDesc);
-    const dueSoonIds = new Set(dueSoon.map((item) => item._id));
+    // const filterStatus = (list) => {
+    //   if (!filterValues.status || filterValues.status.length === 0) return list;
+    //   return list.filter((item) => filterValues.status.includes(item.status));
+    // };
 
-    return {
-      pending: pending
-        .filter((item) => !dueSoonIds.has(item._id))
-        .sort(sortByCreatedAtDesc),
-      inProgress: inProgress
-        .filter((item) => !dueSoonIds.has(item._id))
-        .sort(sortByCreatedAtDesc),
-      resolved: resolved.sort(sortByCreatedAtDesc),
-      dueSoon,
+    const filterPriority = (list) => {
+      if (!clientFilterValues.priority || clientFilterValues.priority.length === 0) return list;
+      return list.filter((item) =>
+        clientFilterValues.priority.includes(String(item.priority || ""))
+      );
     };
-  }, [requestBuckets]);
 
+    const filterStatus = (list) => {
+      if (!clientFilterValues.status || clientFilterValues.status.length === 0) return list;
+      return list.filter((item) => clientFilterValues.status.includes(item.status));
+    };
+
+    const pending = filterStatus(filterPriority(applyDecorators(requestBuckets.pending, "Pending"))).sort(sortByCreatedAtDesc);
+    const inProgress = filterStatus(filterPriority(applyDecorators(requestBuckets.inProgress, "InProgress"))).sort(sortByCreatedAtDesc);
+    const resolved = filterStatus(filterPriority(applyDecorators(requestBuckets.resolved, "Resolved"))).sort(sortByCreatedAtDesc);
+
+    return { pending, inProgress, resolved };
+  }, [requestBuckets, clientFilterValues]);
+  // }, [requestBuckets, filterValues.priority, filterValues.status]);
   const groupList = useMemo(
     () => [
       {
         key: "pending",
         title: "Mới nhận",
-        subtitle: "Yêu cầu mới tiếp nhận",
         variant: "secondary",
-        data: preparedBuckets.pending,
+        data: filteredBuckets.pending,
       },
       {
         key: "inProgress",
         title: "Đang xử lý",
-        subtitle: "Yêu cầu đang xử lý",
         variant: "warning",
-        data: preparedBuckets.inProgress,
+        data: filteredBuckets.inProgress,
       },
       {
         key: "resolved",
         title: "Đã xử lý",
-        subtitle: "Yêu cầu đã xử lý",
         variant: "success",
-        data: preparedBuckets.resolved,
-      },
-      {
-        key: "dueSoon",
-        title: "Sắp tới hạn",
-        subtitle: "Yêu cầu cần xử lý trong 24h",
-        variant: "danger",
-        data: preparedBuckets.dueSoon,
+        data: filteredBuckets.resolved,
       },
     ],
-    [preparedBuckets]
+    [filteredBuckets]
   );
 
-  const visibleGroups = useMemo(() => {
-    if (statusFilter === "in_progress") {
-      return groupList.filter((group) => group.key === "inProgress");
+  const handleFilterSubmit = (values) => {
+    // setFilterValues((prev) => {
+    //   const next = { ...prev, ...values };
+    //   return next;
+    // });
+    // const nextTimeRange = values.timeRange?.[0] || timeRange;
+    // const isDateChanged =
+    //   nextTimeRange === "date" && values.date?.value?.[0] !== filterValues.date?.value?.[0];
+    // if (nextTimeRange !== timeRange || isDateChanged) {
+    //   refetch?.();
+    // }
+    const status = values.status || [];
+    const priority = values.priority || [];
+    setClientFilterValues({ status, priority });
+    delete values.status;
+    delete values.priority;
+    const date = values.date?.value?.[0];
+    if (date) {
+      values.date = date;
+    } else {
+      delete values.date;
     }
-    if (statusFilter === "resolved") {
-      return groupList.filter((group) => group.key === "resolved");
-    }
-    if (statusFilter === "due") {
-      return groupList.filter((group) => group.key === "dueSoon");
-    }
-    return groupList;
-  }, [groupList, statusFilter]);
+    setRequestParams(values);
+    console.log("values", values);
+    setPageByTab({ pending: 1, inProgress: 1, resolved: 1 });
+  };
 
   const handleRefresh = () => {
-    if (requestParams) {
-      refetch();
-    }
+    refetch?.();
   };
 
   const handleOpenDetail = (request) => {
@@ -1025,13 +970,66 @@ const ManageRequestPage = () => {
   };
 
   const loading = Boolean(requestParams) && (isLoading || isFetching);
-  const filterError =
-    filterMode === "date" && !selectedDate ? "Vui lòng chọn ngày" : "";
+  // const filterError =
+  //   timeRange === "date" && (!filterValues.date || !filterValues.date.value?.[0])
+  //     ? "Vui lòng chọn ngày"
+  //     : "";
   const requestError = error
     ? getErrorMessage(error, "Không thể tải dữ liệu")
     : "";
-  const displayError = filterError || requestError;
+  // const displayError = filterError || requestError;
+  const displayError = requestError;
 
+  const currentGroup = groupList.find((item) => item.key === activeTab) || groupList[0];
+  const totalItems = currentGroup?.data?.length || 0;
+  const totalForPaging = Math.max(totalItems, 1); // tránh chia 0
+  const totalPages = Math.ceil(totalForPaging / pageSize);
+  const currentPage = Math.min(pageByTab[activeTab] || 1, totalPages);
+  const paginatedData = currentGroup?.data?.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  const changePage = (nextPage) => {
+    const safeNext = Math.min(Math.max(nextPage, 1), totalPages);
+    setPageByTab((prev) => ({ ...prev, [activeTab]: safeNext }));
+  };
+
+  const renderPagination = () => {
+    return (
+      <div className="d-flex justify-content-between align-items-center mt-2">
+        <div className="d-flex align-items-center gap-2">
+          <span className="text-muted small">Hiển thị</span>
+          <Form.Select
+            size="sm"
+            style={{ width: 90 }}
+            value={pageSize}
+            onChange={(event) => {
+              const nextSize = Number(event.target.value);
+              setPageSize(nextSize);
+              setPageByTab({ pending: 1, inProgress: 1, resolved: 1 });
+            }}
+          >
+            {[20, 30, 40, 50].map((size) => (
+              <option key={size} value={size}>
+                {size} / trang
+              </option>
+            ))}
+          </Form.Select>
+        </div>
+        <PaginationControl
+          page={currentPage}
+          between={2}
+          total={totalForPaging}
+          limit={pageSize}
+          changePage={changePage}
+          ellipsis={1}
+          next={totalPages > currentPage}
+          last={totalPages > currentPage + 1}
+        />
+      </div>
+    );
+  };
   return (
     <div>
       <div className={styles.pageHeader}>
@@ -1054,68 +1052,10 @@ const ManageRequestPage = () => {
 
       <Card className={`mb-3 ${styles.filtersCard}`}>
         <Card.Body>
-          <Row className="g-2 align-items-end">
-            <Col lg={7}>
-              <div className="d-flex flex-wrap align-items-center gap-2">
-                <span className="fw-semibold">Bộ lọc thời gian</span>
-                <ButtonGroup size="sm">
-                  {TIME_FILTERS.map((option) => (
-                    <ToggleButton
-                      key={option.value}
-                      id={`filter-${option.value}`}
-                      type="radio"
-                      variant={
-                        filterMode === option.value
-                          ? "primary"
-                          : "outline-primary"
-                      }
-                      name="time-filter"
-                      value={option.value}
-                      checked={filterMode === option.value}
-                      onChange={(event) => {
-                        const nextValue = event.currentTarget.value;
-                        setFilterMode(nextValue);
-                        if (nextValue === "date" && !selectedDate) {
-                          const now = new Date();
-                          setSelectedDate(now.toISOString().split("T")[0]);
-                        }
-                      }}
-                    >
-                      {option.label}
-                    </ToggleButton>
-                  ))}
-                </ButtonGroup>
-                {filterMode === "date" && (
-                  <Form.Control
-                    type="date"
-                    size="sm"
-                    value={selectedDate}
-                    max={new Date().toISOString().split("T")[0]}
-                    onChange={(event) => setSelectedDate(event.target.value)}
-                    style={{ maxWidth: 180 }}
-                  />
-                )}
-              </div>
-            </Col>
-            <Col sm={6} lg={3}>
-              <Form.Label className="small mb-1">
-                Lọc theo trạng thái
-              </Form.Label>
-              <Form.Select
-                size="sm"
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
-              >
-                <option value="all">Tất cả</option>
-                <option value="in_progress">Đang xử lý</option>
-                <option value="resolved">Đã xử lý</option>
-                <option value="due">Sắp đến hạn</option>
-              </Form.Select>
-            </Col>
-            <Col sm={6} lg={2} className="text-end">
-              {loading && <Spinner animation="border" size="sm" />}
-            </Col>
-          </Row>
+          <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <FilterClient onSubmit={handleFilterSubmit} selectedFilterOptions={[TIME_RANGE, PRIORITY]} />
+            {loading && <Spinner animation="border" size="sm" />}
+          </div>
           {displayError && (
             <Alert variant="danger" className="mt-3 mb-0">
               {displayError}
@@ -1124,18 +1064,41 @@ const ManageRequestPage = () => {
         </Card.Body>
       </Card>
 
-      {visibleGroups.map((group) => (
-        <RequestGroupCard
-          key={group.key}
-          title={group.title}
-          subtitle={group.subtitle}
-          variant={group.variant}
-          data={group.data}
-          onViewDetail={handleOpenDetail}
-          onSendReminder={handleSendReminder}
-          remindLoadingId={remindLoadingId}
-        />
-      ))}
+      <Card>
+        <Card.Header className="pb-0 border-0">
+          <Nav
+            variant="tabs"
+            activeKey={activeTab}
+            onSelect={(k) => setActiveTab(k || "pending")}
+          >
+            {groupList.map((group) => (
+              <Nav.Item key={group.key}>
+                <Nav.Link eventKey={group.key}>
+                  {group.title}{" "}
+                  <Badge bg={group.variant} className="ms-1">
+                    {group.data.length}
+                  </Badge>
+                </Nav.Link>
+              </Nav.Item>
+            ))}
+          </Nav>
+        </Card.Header>
+        <Card.Body>
+          {currentGroup?.data?.length === 0 ? (
+            <div className="text-muted">Không có yêu cầu</div>
+          ) : (
+            <>
+              <RequestTable
+                data={paginatedData || []}
+                onViewDetail={handleOpenDetail}
+                onSendReminder={handleSendReminder}
+                remindLoadingId={remindLoadingId}
+              />
+              {renderPagination()}
+            </>
+          )}
+        </Card.Body>
+      </Card>
     </div>
   );
 };

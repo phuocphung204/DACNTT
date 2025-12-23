@@ -1,26 +1,34 @@
 import express from "express";
-import { io } from "../server.js";
+
+import { protect } from "../middlewares/auth.js";
+import {
+  deleteNotification,
+  getMyNotifications,
+  markAllNotificationsAsRead,
+  markNotificationAsRead,
+  getUnreadNotificationsCount
+} from "../controllers/notification-controller.js";
 
 const router = express.Router();
 
-/**
- *  url api: /api/notifications
- */
+// @route   GET /api/notifications/unread-count
+// @access  Private
+router.get("/unread-count", protect, getUnreadNotificationsCount);
 
-router.post('/send', (req, res) => {
-  const { targetUserId, content } = req.body;
+// @route   GET /api/notifications/my-notifications?cursor=<id>&limit=<number>
+// @access  Private
+router.get("/my-notifications", protect, getMyNotifications);
 
-  // Giả lập lưu vào database...
-  // const noti = await Notification.create(...)
+// @route   PATCH /api/notifications/:id/read
+// @access  Private
+router.patch("/:id/read", protect, markNotificationAsRead);
 
-  // 4. Gửi realtime đến đúng Room của user đó
-  // .to() sẽ gửi tin nhắn đến tất cả các thiết bị (tab) mà user đó đang mở
-  io.to(`notification_account_${targetUserId}`).emit('new_notification', {
-    content: content,
-    timestamp: new Date()
-  });
+// @route   PATCH /api/notifications/read-all
+// @access  Private
+router.patch("/read-all", protect, markAllNotificationsAsRead);
 
-  return res.json({ success: true, message: "Đã gửi thông báo" });
-});
+// @route   DELETE /api/notifications/:id
+// @access  Private
+router.delete("/:id", protect, deleteNotification);
 
 export default router;

@@ -10,6 +10,8 @@ export const backendApi = createApi({
   refetchOnMountOrArgChange: false,
   tagTypes: [
     "User",
+    "Account",
+    "Department",
   ],
   endpoints: () => ({}),
 })

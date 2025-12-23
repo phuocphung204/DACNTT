@@ -52,21 +52,41 @@ export const getAccountByDepartmentId = async (req, res) => {
 // Staff/Admin only - Manage accounts
 export const getAllAccounts = async (req, res) => {
   try {
+    const { page, limit } = req.query;
+    const pageNumber = parseInt(page) || 1;
+    const pageSize = Math.max(1, Math.min(parseInt(limit) || 10, 50)); // Giới hạn từ 1 đến 50
     const filter = req.query.filter ? JSON.parse(req.query.filter) : {};
     if (filter.role) {
-      filter.role = { $in: filter.role };
+      filter.role = { $in: Array.isArray(filter.role) ? filter.role : [filter.role] }; // checkbox multiple
     }
     if (filter.work_status) {
-      filter.work_status = { $in: filter.work_status };
+      filter.work_status = { $in: Array.isArray(filter.work_status) ? filter.work_status : [filter.work_status] }; // checkbox multiple
     }
+    // TODO: làm selective filter cho active sau
     if (filter.active !== undefined) {
-      filter.active = filter.active === "true";
+      const activeArr = Array.isArray(filter.active) ? filter.active : [filter.active];
+      filter.active = { $in: activeArr.map((val) => val === true || val === "true") }; // hỗ trợ boolean string và boolean
     }
-    if (filter.department_id !== undefined) {
-      filter.department_id = filter.department_id;
+    if (filter.department_id) {
+      filter.department_id = { $in: Array.isArray(filter.department_id) ? filter.department_id : [filter.department_id] }; // hỗ trợ nhiều department_id
     }
-    const accounts = await Account.find(filter).select("-password").populate("department_id", "name");
-    res.json({ ec: 200, em: "Accounts retrieved successfully", dt: accounts });
+    const [accounts, totalAccounts] = await Promise.all([
+      Account.find(filter).select("-password")
+        .skip((pageNumber - 1) * pageSize)
+        .limit(pageSize)
+        .populate("department_id", "name"),
+      Account.countDocuments(filter),
+    ]);
+    res.json({
+      ec: 200,
+      em: "Accounts retrieved successfully",
+      dt: {
+        accounts: accounts,
+        total: totalAccounts,
+        page: pageNumber,
+        limit: pageSize,
+      }
+    });
   } catch (error) {
     res.status(500).json({ ec: 500, em: error.message });
   }
@@ -265,16 +285,14 @@ export const createAccount = async (req, res) => {
 export const updateAccount = async (req, res) => {
   try {
     const { account_id } = req.params;
-    const { name, email, position, role, department_id, work_status, active } = req.body;
-    const account = await Account.findByIdAndUpdate(account_id, {
-      name,
-      email,
-      position,
-      role,
-      department_id,
-      work_status,
-      active
-    }, { new: true }).select("-password").populate("department_id", "name");
+    const allowedUpdates = ["name", "email", "position", "role", "department_id", "work_status", "active"];
+    const updates = {};
+    Object.keys(req.body).forEach((key) => {
+      if (allowedUpdates.includes(key)) {
+        updates[key] = req.body[key];
+      }
+    });
+    const account = await Account.findByIdAndUpdate(account_id, updates, { new: true }).select("-password").populate("department_id", "name");
     if (account) {
       res.json({ ec: 200, em: "Account updated successfully", dt: account });
     } else {

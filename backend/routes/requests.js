@@ -23,7 +23,7 @@ router.put("/use-prediction/:request_id", protect, staff, usePredictionByRequest
 router.put("/assign/:request_id", protect, staff, assignRequestToOfficer);
 
 // Get all requests
-// @route   GET /api/requests?status=<status>&date=<date>&today=false&weekly=false&monthly=false&page=<page>
+// @route   GET /api/requests?date=<date>&today=false&weekly=false
 // @access  System
 router.get("/", protect, staff, getAllRequests);
 
@@ -64,7 +64,7 @@ router.get("/:request_id", protect, staff_or_officer, getRequestById);
 router.get("/:request_id/attachments/:attachment_id", protect, officer, downloadAttachment);
 
 // Get my assigned requests
-// @route   GET /api/requests/my-assigned-requests?date=<date>&today=false&weekly=false&monthly=false&page=<page>
+// @route   GET /api/requests/my-assigned-requests?date=<date>&today=false&weekly=false
 // @access  Private/Officer
 // Đã chuyển lên trên
 // router.get("/my-assigned-requests", protect, officer, getMyAssignedRequests);

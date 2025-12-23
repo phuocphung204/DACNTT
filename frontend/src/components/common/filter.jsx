@@ -60,6 +60,42 @@ const FilterOptions = {
       { label: "Đã giải quyết", value: "Resolved" },
     ],
   },
+  // Fields for accounts
+  role: {
+    label: "Vai trò",
+    param: "role",
+    icon: <BsCalendar3 size={13} />,
+    multiselect: true,
+    defaultValue: null,
+    values: [
+      { label: "Cán bộ", value: "Officer" },
+      { label: "Nhân viên", value: "Staff" },
+      { label: "Quản trị viên", value: "Admin" },
+    ],
+  },
+  work_status: {
+    label: "Trạng thái công việc",
+    param: "work_status",
+    icon: <BsCalendar3 size={13} />,
+    multiselect: true,
+    defaultValue: null,
+    values: [
+      { label: "Đang làm việc", value: "Active" },
+      { label: "Nghỉ phép", value: "OnLeave" },
+      { label: "Đã nghỉ hưu", value: "Retired" },
+    ],
+  },
+  active: {
+    label: "Trạng thái hoạt động",
+    param: "active",
+    icon: <BsCalendar3 size={13} />,
+    multiselect: true,
+    defaultValue: null,
+    values: [
+      { label: "Đang hoạt động", value: "true" },
+      { label: "Vô hiệu hóa", value: "false" },
+    ],
+  },
 };
 
 const Filter = memo(({
@@ -67,6 +103,7 @@ const Filter = memo(({
   onSubmit,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
+
   const [paramStates, setParamStates] = useImmer(() => {
     const initialStates = {};
     selectedFilterOptions.forEach((optionKey) => {
@@ -93,6 +130,7 @@ const Filter = memo(({
 
     return initialStates;
   });
+
   const [filterChildState, setFilterChildState] = useImmer(() => {
     const initial = {};
     selectedFilterOptions.forEach((optionKey) => {

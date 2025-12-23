@@ -1,0 +1,27 @@
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.headerTitle {
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.metaText {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.tableActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badgePill {
+  border-radius: 999px;
+}

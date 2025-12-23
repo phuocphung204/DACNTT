@@ -30,10 +30,10 @@ $yellow-color: #ffc107;
 }
 
 .parentFontSizeContainer {
-  font-size: 12px;
+  font-size: 14px;
 
   * {
-    font-size: 1em !important;
+    font-size: 1em;
   }
 }
 
@@ -45,4 +45,15 @@ $yellow-color: #ffc107;
   padding: 2px 3px;
   font-size: 7px;
   text-align: center;
+}
+
+.btnApplyFilters {
+  cursor: pointer;
+  margin-left: auto;
+  color: #6c757d;
+  transition: color 0.2s ease-in-out;
+
+  &:hover {
+    color: $yellow-color;
+  }
 }

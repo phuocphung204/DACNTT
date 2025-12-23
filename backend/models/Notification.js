@@ -1,5 +1,11 @@
 import { Schema, model } from "mongoose";
 
+export const NOTIFICATION_TYPES = Object.freeze({
+  REQUEST_REPLY_STUDENT: "REQUEST_REPLY_STUDENT", // Thông báo trả lời request cho sinh viên
+  REQUEST_ASSIGNED: "REQUEST_ASSIGNED",         // Thông báo được phân công request cho officer
+  CHAT_MESSAGE: "CHAT_MESSAGE"                  // Thông báo tin nhắn chat
+});
+
 const SenderSchema = new Schema({
   user_id: { type: Schema.Types.ObjectId, ref: "Account" },
   name: { type: String },
