@@ -1,5 +1,8 @@
 import { BsCalendar3 } from "react-icons/bs";
 
+export const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50];
+export const DEFAULT_PAGE_SIZE = 10;
+
 export const TIME_RANGE = "timeRange";
 export const PRIORITY = "priority";
 export const STATUS = "status";
@@ -84,4 +87,8 @@ export const WORK_STATUS = Object.freeze({
   [WORK_STATUS_ENUM.ACTIVE]: { label: "Đang làm việc", value: "Active", variant: "success" },
   [WORK_STATUS_ENUM.ON_LEAVE]: { label: "Nghỉ phép", value: "OnLeave", variant: "warning" },
   [WORK_STATUS_ENUM.RETIRED]: { label: "Đã nghỉ", value: "Retired", variant: "secondary" }
+});
+
+export const WEB_SOCKET_EVENTS = Object.freeze({
+  NEW_NOTIFICATION: "new_notification",
 });

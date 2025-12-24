@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { io } from "../server.js";
 import Notification from "../models/Notification.js";
+import { SOCKET_EVENTS } from "../_variables.js";
 
 export const createNotification = async ({ sender, recipient_id, type, entity_id, data }) => {
   // Tạo hoặc cập nhật thông báo
@@ -39,9 +40,20 @@ export const createNotification = async ({ sender, recipient_id, type, entity_id
 
   return notificationDoc;
 }
+export const countUnreadNotificationsForRecipient = async (recipient_id) => {
+  const count = await Notification.countDocuments({
+    recipient_id: recipient_id,
+    is_read: false,
+  });
+  return count;
+}
 
 export const sendNotification = async (targetUserId, payload) => {
-  io.to(`notification_account_${targetUserId}`).emit('new_notification', payload);
+  const newPayload = {
+    notification: payload,
+    unread_count: await countUnreadNotificationsForRecipient(targetUserId)
+  };
+  io.to(`notification_account_${targetUserId}`).emit(SOCKET_EVENTS.NEW_NOTIFICATION, newPayload);
 };
 
 export const markNotificationAsRead = async (req, res) => {
@@ -140,10 +152,7 @@ export const getMyNotifications = async (req, res) => {
 
 export const getUnreadNotificationsCount = async (req, res) => {
   try {
-    const count = await Notification.countDocuments({
-      recipient_id: req.account._id,
-      is_read: false,
-    });
+    const count = await countUnreadNotificationsForRecipient(req.account._id);
 
     return res.status(200).json({
       ec: 200,

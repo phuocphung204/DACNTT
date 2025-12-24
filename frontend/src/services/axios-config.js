@@ -1,5 +1,7 @@
 import { TOKEN_KEY_NAME } from "#redux";
+import { io } from "socket.io-client";
 import axios from "axios";
+
 
 export const BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
@@ -7,7 +9,7 @@ export const axiosInstance = axios.create({
   baseURL: `${BASE_URL}/api`,
   timeout: 10000,
   headers: { "Content-Type": "application/json" },
-})
+});
 
 axiosInstance.interceptors.response.use(
   (response) => {
@@ -51,3 +53,14 @@ export const axiosBaseQuery = ({ baseUrl } = { baseUrl: "" }) =>
       return { error: axiosError }
     }
   };
+
+export const socket = io(BASE_URL, {
+  auth: {
+    token: getUserToken()
+  },
+  transports: ['websocket'] // Ép dùng websocket ngay lập tức để giảm độ trễ
+});
+
+socket.on("connect_error", (err) => {
+  console.log("Lỗi kết nối:", err);
+});

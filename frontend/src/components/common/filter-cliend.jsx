@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import DateRangePicker from "react-bootstrap-daterangepicker";
 
 import { resetFilterValue, setActiveState, setValuesState } from "#redux/filter-slice";
-import { CLIENT_FILTERS } from "#components/variables";
+import { CLIENT_FILTERS } from "#components/_variables";
 import styles from "./filter.module.scss";
 
 const FilterClient = ({

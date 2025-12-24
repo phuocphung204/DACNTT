@@ -14,9 +14,7 @@ const SearchBar = ({
   onSubmit,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [value, setValue] = useState(
-    () => searchParams.get(searchQueryParamKey) || ""
-  );
+  const [value, setValue] = useState(searchParams.get(searchQueryParamKey) || "");
   const [shortcutLabel, setShortcutLabel] = useState("Ctrl");
   const inputRef = useRef(null);
 

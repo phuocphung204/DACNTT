@@ -39,6 +39,7 @@ const notificationServices = backendApi.injectEndpoints({
 
 export const {
   useGetMyNotificationsQuery,
+  useLazyGetMyNotificationsQuery,
   useMarkNotificationAsReadMutation,
   useMarkAllNotificationsAsReadMutation,
   useDeleteNotificationMutation,

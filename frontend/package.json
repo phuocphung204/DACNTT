@@ -23,6 +23,7 @@
     "react-scripts": "5.0.1",
     "react-toastify": "10.0.5",
     "redux": "5.0.1",
+    "redux-persist": "6.0.0",
     "sass": "1.77.0",
     "socket.io-client": "4.8.1",
     "use-immer": "0.11.0",

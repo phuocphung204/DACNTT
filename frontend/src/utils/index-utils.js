@@ -40,9 +40,9 @@ export const updateParams = (prevParams, key, anyValue) => {
   return nextParams;
 };
 
-export const getValuesFromParams = (searchParams, aparamArr = []) => {
+export const getValuesFromParams = (searchParams, paramArr = []) => {
   const params = {};
-  aparamArr.forEach((key) => {
+  paramArr.forEach((key) => {
     const values = searchParams.getAll(key);
     if (values.length > 0) {
       params[key] = values;
@@ -52,3 +52,4 @@ export const getValuesFromParams = (searchParams, aparamArr = []) => {
 }
 
 export * from "./format";
+export * from "./parse";

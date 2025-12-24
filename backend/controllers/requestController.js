@@ -240,21 +240,7 @@ export const usePredictionByRequestId = async (req, res) => {
 
 
 		// Gửi thông báo đến officer được gán
-		const sender = {
-			user_id: req.account._id,
-			name: req.account.name,
-			avatar: req.account.avatar
-		}
-		const notification = await createNotification({
-			sender: sender,
-			recipient_id: assigned_to,
-			type: NOTIFICATION_TYPES.REQUEST_ASSIGNED,
-			entity_id: request._id,
-			data: {
-				request_subject: request.subject
-			},
-		});
-		sendNotification(assigned_to, notification);
+		sendAssignmentNotification(req, assigned_to, request);
 		res.status(200).json({ ec: 200, em: "Prediction marked as used", dt: request });
 	} catch (error) {
 		res.status(500).json({ ec: 500, em: error.message });
@@ -279,6 +265,8 @@ export const assignRequestToOfficer = async (req, res) => {
 		request.label = label;
 		request.priority = priority;
 		await request.save();
+
+		sendAssignmentNotification(req, assigned_to, request);
 
 		res.status(200).json({ ec: 200, em: "Request assigned to officer successfully", dt: request });
 	} catch (error) {
@@ -355,3 +343,90 @@ export const getMyAssignedRequests = async (req, res) => {
 		res.status(500).json({ ec: 500, em: error.message });
 	}
 };
+
+export const getMyAssignedRequestsForManage = async (req, res) => {
+	try {
+		const { timeRange, page, limit } = req.query;
+		const pageNumber = parseInt(page) || 1;
+		const pageSize = Math.max(1, Math.min(parseInt(limit) || 1, 50));
+		const officer_id = req.account._id;
+
+		const filter = { assigned_to: officer_id };
+		const now = new Date();
+
+		// Ngày cụ thể
+		if (timeRange === "date") {
+			const { date } = req.query;
+			const selectedDate = new Date(date);
+			const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+			const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
+			filter.created_at = { $gte: startOfDay, $lt: endOfDay };
+		}
+		// Hôm nay
+		else if (timeRange === "today") {
+			const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+			const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+			filter.created_at = { $gte: startOfDay, $lt: endOfDay };
+		}
+		// Tuần hiện tại
+		else if (timeRange === "weekly") {
+			const firstDayOfWeek = new Date(now);
+			const day = firstDayOfWeek.getDay() || 7; // CN = 7
+			firstDayOfWeek.setDate(firstDayOfWeek.getDate() - day + 1);
+
+			const lastDayOfWeek = new Date(firstDayOfWeek);
+			lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
+			filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
+		}
+		else if (timeRange === "dateRange") {
+			const { startDate, endDate } = req.query;
+			const start = new Date(startDate);
+			const end = new Date(endDate);
+			end.setDate(end.getDate() + 1);
+			filter.created_at = { $gte: start, $lt: end };
+		}
+		// Mặc định lấy hôm nay
+		else {
+			const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+			const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+			filter.created_at = { $gte: startOfDay, $lt: endOfDay };
+		}
+		const skip = (pageNumber - 1) * pageSize;
+		const [myAssignedRequests, total] = await Promise.all([
+			Request.find({ ...filter })
+				.sort({ created_at: -1, priority: 1 })
+				.skip(skip)
+				.limit(pageSize).select("_id student_email subject created_at updated_at status priority label assigned_to"),
+			Request.countDocuments({ ...filter })
+		]);
+
+		res.status(200).json({
+			ec: 200, em: "My Assigned Requests retrieved successfully", dt: {
+				requests: myAssignedRequests,
+				total: total,
+				page: pageNumber,
+				limit: pageSize
+			}
+		});
+	} catch (error) {
+		res.status(500).json({ ec: 500, em: error.message });
+	}
+};
+
+const sendAssignmentNotification = async (req, assigned_to, request) => {
+	const sender = {
+		user_id: req.account._id,
+		name: req.account.name,
+		avatar: req.account.avatar
+	};
+	const notification = await createNotification({
+		sender: sender,
+		recipient_id: assigned_to,
+		type: NOTIFICATION_TYPES.REQUEST_ASSIGNED,
+		entity_id: request._id,
+		data: {
+			request_subject: request.subject
+		},
+	});
+	sendNotification(assigned_to, notification);
+}

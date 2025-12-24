@@ -1,6 +1,6 @@
 import express from "express";
 
-import { createRequest, getAllRequests, usePredictionByRequestId, assignRequestToOfficer, getRequestById, uploadAttachments, downloadAttachment, getMyAssignedRequests } from "../controllers/requestController.js";
+import { createRequest, getAllRequests, usePredictionByRequestId, assignRequestToOfficer, getRequestById, uploadAttachments, downloadAttachment, getMyAssignedRequests, getMyAssignedRequestsForManage } from "../controllers/requestController.js";
 import { readUnreadEmails } from "../services/email_ggapi.js";
 import { protect, staff, upload, staff_or_officer, officer } from "../middlewares/auth.js";
 
@@ -43,6 +43,8 @@ router.post("/pubsub", readUnreadEmails);
 // @route   GET /api/requests/my-assigned-requests?date=<date>&today=false&weekly=false&monthly=false&page=<page>
 // @access  Private/Officer
 router.get("/my-assigned-requests", protect, officer, getMyAssignedRequests);
+router.get("/my-assigned-requests/manage", protect, officer, getMyAssignedRequestsForManage);
+
 
 // Upload attachment to request by ID
 // @route   POST /api/requests/:request_id/attachments

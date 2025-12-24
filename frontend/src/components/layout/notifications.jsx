@@ -1,44 +1,54 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge, Button, ListGroup, OverlayTrigger, Popover, Spinner, Stack } from "react-bootstrap";
 import { BsBellFill, BsCheck2All, BsInboxFill } from "react-icons/bs";
 import { toast } from "react-toastify";
 
 import { useGetMyNotificationsQuery, useGetUnreadNotificationsCountQuery, useMarkAllNotificationsAsReadMutation, useMarkNotificationAsReadMutation } from "#services";
-import { NOTIFICATION_TYPES } from "../variables";
+import { NOTIFICATION_TYPES, WEB_SOCKET_EVENTS } from "../_variables";
 import { formatDateTime } from "#utils/format";
 import styles from "./notifications.module.scss";
+import { socket } from "services/axios-config";
+import { useNavigate } from "react-router-dom";
 
 const MAX_DISPLAY = 10;
 
 const Notifications = () => {
+  const navigate = useNavigate();
   const [showPopover, setShowPopover] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
 
-  const { data: unreadData, refetch: refetchUnread } = useGetUnreadNotificationsCountQuery();
-  const unreadCount = unreadData?.dt?.count ?? 0;
+  const { data: unreadData, isSuccess: isUnreadSuccess, refetch: refetchUnread } = useGetUnreadNotificationsCountQuery();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const {
     data: notificationsData,
     isFetching: isLoadingList,
+    isSuccess: isListSuccess,
     refetch: refetchList,
   } = useGetMyNotificationsQuery(
     { limit: MAX_DISPLAY },
-    { skip: !showPopover }
   );
+  const [notifications, setNotifications] = useState([]);
 
   const [markNotificationAsRead, { isLoading: isMarking }] = useMarkNotificationAsReadMutation();
   const [markAllNotificationsAsRead, { isLoading: isMarkingAll }] = useMarkAllNotificationsAsReadMutation();
+  const canRefetch = useRef(true);
 
-  useEffect(() => {
-    if (showPopover) {
-      setHasOpened(true);
-    }
-  }, [showPopover]);
-
-  const notifications = useMemo(
-    () => notificationsData?.dt?.notifications ?? [],
-    [notificationsData]
-  );
+  const handleUpdateNotifications = useCallback((data) => {
+    const { notification, unread_count } = data;
+    const _id = notification?._id;
+    setUnreadCount(unread_count || 0);
+    if (!_id) return;
+    const idx = notifications.findIndex((n) => n._id === _id);
+    if (idx === -1) {
+      const newNotifications = [notification, ...notifications];
+      setNotifications(newNotifications);
+      return;
+    };
+    const newNotifications = [...notifications];
+    newNotifications[idx] = notification;
+    setNotifications(newNotifications);
+  }, [notifications]);
 
   const renderNotificationContent = (notification) => {
     if (notification.type === NOTIFICATION_TYPES.REQUEST_ASSIGNED) {
@@ -66,18 +76,31 @@ const Notifications = () => {
 
   const handleToggle = (next) => {
     setShowPopover(next);
-    if (next) {
-      refetchList();
-      refetchUnread();
+    if (next && canRefetch.current) {
+      refetchList?.();
+      refetchUnread?.();
     }
   };
 
   const handleMarkAsRead = async (notification) => {
     if (!notification?._id) return;
     try {
+      switch (notification.type) {
+        case NOTIFICATION_TYPES.REQUEST_ASSIGNED:
+          // Chuyển trang đến request
+          const requestId = notification?.entity_id;
+          if (!requestId) {
+            toast.error("Không tìm thấy yêu cầu");
+            break;
+          }
+          navigate(`/yeu-cau/${requestId}`, { replace: false });
+          break;
+        default:
+          break;
+      }
       await markNotificationAsRead(notification._id).unwrap();
       toast.info("Đã xem thông báo");
-      refetchList();
+      // refetchList();
       refetchUnread();
     } catch (error) {
       toast.error(error?.em || "Không thể đánh dấu đã đọc");
@@ -94,6 +117,35 @@ const Notifications = () => {
       toast.error(error?.em || "Không thể đánh dấu tất cả");
     }
   };
+
+  useEffect(() => {
+    if (isListSuccess && notificationsData?.dt?.notifications) {
+      setNotifications(notificationsData.dt.notifications);
+    }
+  }, [isListSuccess, notificationsData]);
+
+  useEffect(() => {
+    if (isUnreadSuccess && unreadData?.dt?.count !== undefined) {
+      setUnreadCount(unreadData.dt.count);
+    }
+  }, [isUnreadSuccess, unreadData]);
+
+  useEffect(() => {
+    if (showPopover) {
+      setHasOpened(true);
+    }
+  }, [showPopover]);
+
+  useEffect(() => {
+    socket.on(WEB_SOCKET_EVENTS.NEW_NOTIFICATION, (data) => {
+      console.log("Có thông báo mới:", data);
+      canRefetch.current = false;
+      handleUpdateNotifications(data);
+    });
+    return () => socket.off(WEB_SOCKET_EVENTS.NEW_NOTIFICATION);
+  }, [handleUpdateNotifications]);
+
+
 
   const badgeContent = unreadCount > MAX_DISPLAY ? `+${MAX_DISPLAY}` : unreadCount;
 

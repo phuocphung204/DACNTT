@@ -90,9 +90,9 @@ export const requestService = backendApi.injectEndpoints({
     /**
      * Các endpoint cho Officer
      */
-    getMyAssignedRequests: build.query({
+    getMyAssignedRequestsForManage: build.query({
       query: (params) => ({
-        url: "/requests/my-assigned-requests",
+        url: "/requests/my-assigned-requests/manage",
         method: "GET",
         params,
       }),
@@ -113,5 +113,5 @@ export const {
   useDownloadAttachmentMutation,
 
   // Các endpoint cho Officer
-  useGetMyAssignedRequestsQuery,
+  useGetMyAssignedRequestsForManageQuery,
 } = requestService;

@@ -9,7 +9,7 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { userModalDialogStore, useShallow } from "#custom-hooks";
-import { ACCOUNT_ROLES, ACCOUNT_ROLES_ENUM, GENDER, GENDER_ENUM, WORK_STATUS, WORK_STATUS_ENUM } from "#components/variables";
+import { ACCOUNT_ROLES, ACCOUNT_ROLES_ENUM, GENDER, GENDER_ENUM, PAGE_SIZE_OPTIONS, WORK_STATUS, WORK_STATUS_ENUM } from "#components/_variables";
 import {
   useCreateAccountMutation,
   useGetAccountByIdQuery,
@@ -18,25 +18,11 @@ import {
 } from "#services/account-services";
 import { useGetDepartmentsQuery } from "#services/request-services";
 import { createAccountSchema, updateAccountSchema } from "#schemas";
-import { formatDate } from "#utils/format";
+import { formatDate, parsePageSize, parsePageParam } from "#utils";
 import Filter from "#components/common/filter";
 import RoleGuard from "#components/common/role-guard";
 
 import styles from "./manage-accounts-page.module.scss";
-
-const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50];
-const DEFAULT_PAGE_SIZE = 10;
-
-const parsePageParam = (value) => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-};
-
-const parsePageSize = (value) => {
-  const parsed = Number(value);
-  if (PAGE_SIZE_OPTIONS.includes(parsed)) return parsed;
-  return DEFAULT_PAGE_SIZE;
-};
 
 const buildFilterFromSearchParams = (params) => {
   const nextFilter = {};
@@ -429,8 +415,8 @@ const AccountTable = ({ data, onViewDetail, onEdit }) => {
 const ManageAccountsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(() => parsePageParam(searchParams.get("page")));
-  const [pageSize, setPageSize] = useState(() => parsePageSize(searchParams.get("limit")));
-  const [filterState, setFilterState] = useState(() => buildFilterFromSearchParams(searchParams));
+  const [pageSize, setPageSize] = useState(parsePageSize(searchParams.get("limit")));
+  const [filterState, setFilterState] = useState(buildFilterFromSearchParams(searchParams));
 
   const { push, resetModal } = userModalDialogStore(
     useShallow((state) => ({
@@ -438,12 +424,6 @@ const ManageAccountsPage = () => {
       resetModal: state.reset,
     }))
   );
-
-  useEffect(() => {
-    setPage(parsePageParam(searchParams.get("page")));
-    setPageSize(parsePageSize(searchParams.get("limit")));
-    setFilterState(buildFilterFromSearchParams(searchParams));
-  }, [searchParams]);
 
   const { data: accountsResponse, isLoading, isFetching, error, refetch } = useGetAccountsQuery({
     page,
@@ -466,20 +446,32 @@ const ManageAccountsPage = () => {
   const currentPage = Math.min(page, totalPages);
   const loading = isLoading || isFetching;
 
-  useEffect(() => {
-    if (page !== currentPage) {
-      const next = new URLSearchParams(searchParams);
-      next.set("page", String(currentPage));
-      next.set("limit", String(pageSize));
-      setSearchParams(next);
-    }
-  }, [currentPage, page, pageSize, searchParams, setSearchParams]);
+  const getErrorMessage = (err) => err?.em || err?.message || "Không thể tải dữ liệu";
+  const displayError = error ? getErrorMessage(error) : "";
+
+  // useEffect(() => {
+  //   console.log("Sync page and pageSize with URL params");
+  //   if (page !== currentPage) {
+  //     const next = new URLSearchParams(searchParams);
+  //     next.set("page", String(currentPage));
+  //     next.set("limit", String(pageSize));
+  //     setSearchParams(next);
+  //   }
+  // }, [currentPage, page, pageSize, searchParams, setSearchParams]);
+
+  // useEffect(() => {
+  //   console.log("Update page, pageSize and filterState from URL params");
+  //   setPage(parsePageParam(searchParams.get("page")));
+  //   setPageSize(parsePageSize(searchParams.get("limit")));
+  //   setFilterState(buildFilterFromSearchParams(searchParams));
+  // }, [searchParams]);
 
   const handleFilterSubmit = (nextParams) => {
     const params = new URLSearchParams(nextParams);
     params.set("page", "1");
     params.set("limit", String(pageSize));
     setSearchParams(params);
+    setFilterState(buildFilterFromSearchParams(params));
     setPage(1);
   };
 
@@ -505,9 +497,6 @@ const ManageAccountsPage = () => {
   const handleRefresh = () => {
     refetch?.();
   };
-
-  const getErrorMessage = (err) => err?.em || err?.message || "Không thể tải dữ liệu";
-  const displayError = error ? getErrorMessage(error) : "";
 
   const handleCreateAccountSubmit = async (values) => {
     const payload = {

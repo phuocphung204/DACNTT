@@ -35,7 +35,8 @@ const accountSchema = new Schema(
     avatar: { type: String },
     work_status: { type: String, enum: ["Active", "OnLeave", "Retired"], default: "Active" },
     active: { type: Boolean, default: true },
-    department_id: { type: Schema.Types.ObjectId, ref: "Department", required: true } // Nếu role là Staff, thì có department_id của phòng CNTT (Phòng Điện toán – Máy tính)
+    department_id: { type: Schema.Types.ObjectId, ref: "Department", required: true }, // Nếu role là Staff, thì có department_id của phòng CNTT (Phòng Điện toán – Máy tính)
+    google_info: { type: Object, default: {} } // Lưu thông tin Google OAuth (nếu có)
   },
   {
     timestamps: {

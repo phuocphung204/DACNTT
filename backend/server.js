@@ -55,9 +55,7 @@ import departmentRoutes from "./routes/departments.js";
 import requestRoutes from "./routes/requests.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import notificationRoutes from "./routes/notifications.js";
-// Services
-import { initGmailWatcher } from "./services/email_ggapi.js";
-import { initModel } from "./services/finetune.js";
+import { startListening } from "./services/gmail-chat.js";
 
 // Middleware
 app.use(express.json({ limit: "10mb" }));
@@ -129,3 +127,5 @@ connectDB().then(() => {
     // await initModel();
   });
 });
+
+startListening(); // Bắt đầu lắng nghe tin nhắn từ Pub/Sub

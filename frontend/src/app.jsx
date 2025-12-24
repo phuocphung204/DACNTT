@@ -8,10 +8,11 @@ import RequestDetailsPage from "./pages/request-details/request-details-page";
 import LoginPage from "#pages/auth/login-page";
 import ManageRequestPage from "#pages/manage-requests/manage-request-page";
 import ResetPasswordPage from "#pages/auth/reset-password-page";
-import OfficerRequestsPage from "#pages/officer-requests/officer-requests-page";
+import OfficerManageRequestsPage from "#pages/officer-manage-requests/officer-manage-requests-page";
 import SocketIoSetupPage from "#pages/socket-io-setup/socket-io-setup-page";
 import StaffRequestsPage from "#pages/staff-requests/staff-requests-page";
 import ManageAccountsPage from "#pages/manage-accounts/manage-accounts-page";
+import TestPage from "#pages/test-page/test-page";
 
 enableMapSet();
 
@@ -33,10 +34,11 @@ function App() {
           <Route path="/requests/processing" element={<RequestListPage />} />
           <Route path="/yeu-cau/:id" element={<RequestDetailsPage />} />
           <Route path="/quan-ly-yeu-cau" element={<ManageRequestPage />} />
-          <Route path="/yeu-cau" element={<OfficerRequestsPage />} />
+          <Route path="/yeu-cau" element={<OfficerManageRequestsPage />} />
           <Route path="/xu-ly-yeu-cau" element={<StaffRequestsPage />} />
           <Route path="/quan-ly-tai-khoan" element={<ManageAccountsPage />} />
           <Route path="socket-io-setup" element={<SocketIoSetupPage />} />
+          <Route path="test-page" element={<TestPage />} />
         </Route>
       </Routes>
     </>

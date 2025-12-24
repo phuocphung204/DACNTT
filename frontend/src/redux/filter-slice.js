@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-import { CLIENT_FILTERS } from "#components/variables";
+import { CLIENT_FILTERS } from "#components/_variables";
 
 const initialState = {
   activeFilters: (() => {

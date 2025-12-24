@@ -9,7 +9,12 @@ import { supabase } from "../services/supabaseClient.js";
 export const getAccountByDepartmentId = async (req, res) => {
   try {
     const { department_id } = req.params;
-    const accounts = await Account.find({ department_id: department_id, role: "Officer", work_status: "Active", active: true }).select("-password -department_id -role -work_status -active -updated_at -created_at -__v");
+    const accounts = await Account.find({
+      department_id: department_id,
+      role: "Officer",
+      work_status: "Active",
+      active: true
+    }).select("-password -department_id -role -work_status -active -updated_at -created_at -__v");
     const result = await Promise.all(
       accounts.map(async (account) => {
         const [total, assignedCount, inProgressCount] = await Promise.all([

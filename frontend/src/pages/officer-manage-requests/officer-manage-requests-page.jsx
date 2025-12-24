@@ -10,6 +10,7 @@ import {
   Row,
   Spinner,
   Table,
+  Form,
 } from "react-bootstrap";
 import { PaginationControl } from "react-bootstrap-pagination-control";
 import {
@@ -18,14 +19,15 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
+import { getValuesFromParams, parsePageParam, parsePageSize } from "#utils";
+import { useGetMyAssignedRequestsForManageQuery } from "#services/request-services";
+import { formatDateTime } from "#utils";
 import Filter from "#components/common/filter";
 import SearchBar from "#components/common/search-bar";
-import { getValuesFromParams } from "#utils";
-import { useGetMyAssignedRequestsQuery } from "#services/request-services";
 
-import styles from "./officer-requests-page.module.scss";
+import styles from "./officer-manage-requests-page.module.scss";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50];
 
 // TODO: move to common variable file
 const PRIORITY_LABELS = {
@@ -56,17 +58,6 @@ const STATUS_VARIANTS = {
   Resolved: "success",
 };
 
-const padValue = (value) => String(value).padStart(2, "0");
-
-const formatDateTime = (value) => {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return `${date.getFullYear()}-${padValue(date.getMonth() + 1)}-${padValue(
-    date.getDate()
-  )} ${padValue(date.getHours())}:${padValue(date.getMinutes())}`;
-};
-
 const normalizeStatus = (status) => {
   if (status === "Assigned") return "InProgress";
   if (status === "InProgress" || status === "Resolved" || status === "Pending") {
@@ -91,42 +82,44 @@ const shortenId = (value) => {
   return str.length > 8 ? str.slice(-8).toUpperCase() : str.toUpperCase();
 };
 
+
 const controlledParams = ["page", "limit", "q", "priority", "status", "timeRange", "date", "startDate", "endDate"];
 
-const OfficerRequestsPage = () => {
+const OfficerManageRequestsPage = () => {
   const navigate = useNavigate();
+
   const [searchParams, setSearchParams] = useSearchParams();
   const [previewRequest, setPreviewRequest] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
-
-  const currentPage = Math.max(Number(searchParams.get("page")) || 1, 1);
-
-  // useEffect(() => {
-  //   if (!searchParams.get("page")) {
-  //     setSearchParams((prev) => {
-  //       const next = new URLSearchParams(prev);
-  //       next.set("page", "1");
-  //       return next;
-  //     }, { replace: true });
-  //   }
-  // }, [searchParams, setSearchParams]);
-
-  const requestParams = useMemo(() => {
+  const [page, setPage] = useState(parsePageParam(searchParams.get("page")));
+  const [pageSize, setPageSize] = useState(parsePageSize(searchParams.get("limit")));
+  const [requestParams, setRequestParams] = useState(() => {
     const params = getValuesFromParams(searchParams, controlledParams);
-    params.page = currentPage;
-    params.pageSize = PAGE_SIZE;
+    params.page = page;
+    params.limit = pageSize;
     return params;
-  }, [searchParams, currentPage]);
+  });
 
+  // const requestParams = useMemo(() => {
+  //   const params = getValuesFromParams(searchParams, controlledParams);
+  //   params.page = currentPage;
+  //   params.limit = pageSize;
+  //   return params;
+  // }, [searchParams, currentPage, pageSize]);
   const {
     data,
     isLoading,
     isFetching,
     error,
     refetch,
-  } = useGetMyAssignedRequestsQuery(requestParams, {
+  } = useGetMyAssignedRequestsForManageQuery(requestParams, {
     skip: !requestParams,
   });
+  const totalRequests = data?.dt?.total ?? 0;
+  const totalForPagination = Math.max(totalRequests, 1);
+  const totalPages = Math.max(Math.ceil(totalRequests / pageSize), 1);
+  const currentPage = Math.min(page, totalPages);
+  const loading = isLoading || isFetching;
 
   const rawRequests = useMemo(() => {
     const list = Array.isArray(data?.dt?.requests) ? data.dt.requests : [];
@@ -136,32 +129,55 @@ const OfficerRequestsPage = () => {
     }));
   }, [data]);
 
+  useEffect(() => {
+    if (page !== currentPage) {
+      const next = new URLSearchParams(searchParams);
+      next.set("page", String(currentPage));
+      next.set("limit", String(pageSize));
+      setSearchParams(next);
+    }
+  }, [currentPage, page, pageSize, searchParams, setSearchParams]);
+
   const handleSearchSubmit = useCallback((nextParams) => {
     if (nextParams instanceof URLSearchParams) {
       console.log("Search submit params:", nextParams.toString());
       nextParams.set("page", "1");
-      setSearchParams(prev => {
-        console.log("Previous params:", prev.toString());
-        return new URLSearchParams(nextParams);
-      });
+      const params = getValuesFromParams(nextParams, controlledParams);
+      params.limit = pageSize;
+      setRequestParams(params);
+      setSearchParams(nextParams, { replace: true });
     }
-  }, [setSearchParams]);
+  }, [setSearchParams, pageSize]);
 
   const handleFilterSubmit = useCallback((nextParams) => {
     if (nextParams instanceof URLSearchParams) {
       console.log("Filter submit params:", nextParams.toString());
       nextParams.set("page", "1");
+      const params = getValuesFromParams(nextParams, controlledParams);
+      params.limit = pageSize;
+      setRequestParams(params);
       setSearchParams(nextParams, { replace: true });
     }
-  }, [setSearchParams]);
+  }, [setSearchParams, pageSize]);
 
-  const handlePageChange = useCallback((nextPage) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set("page", String(nextPage));
-      return next;
-    }, { replace: true });
-  }, [setSearchParams]);
+  const handlePageChange = (nextPage) => {
+    const safePage = Math.min(Math.max(nextPage, 1), totalPages);
+    const params = new URLSearchParams(searchParams);
+    params.set("page", String(safePage));
+    params.set("limit", String(pageSize));
+    setSearchParams(params);
+    setPage(safePage);
+  };
+
+  const handlePageSizeChange = (event) => {
+    const nextSize = parsePageSize(event.target.value);
+    const params = new URLSearchParams(searchParams);
+    params.set("limit", String(nextSize));
+    params.set("page", "1");
+    setSearchParams(params);
+    setPageSize(nextSize);
+    setPage(1);
+  };
 
   const handleRefresh = () => {
     refetch?.();
@@ -261,10 +277,7 @@ const OfficerRequestsPage = () => {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  const totalRequests = data?.dt?.total_requests || 0;
-  const totalForPagination = totalRequests;
 
-  const loading = isLoading || isFetching;
   const errorMessage = error
     ? error?.data?.em ||
     error?.error ||
@@ -274,8 +287,8 @@ const OfficerRequestsPage = () => {
   // Start debug
   // useRenderCount("OfficerRequestsPage");
   useEffect(() => {
-    console.log("Search params changed:", searchParams.toString());
-  }, [searchParams]);
+    console.log("Data changed:", data);
+  }, [data]);
   // End debug
 
   return (
@@ -330,51 +343,66 @@ const OfficerRequestsPage = () => {
           ) : !loading && rawRequests.length === 0 ? (
             <div className="text-muted">Không có yêu cầu nào phù hợp.</div>
           ) : (
-            <div className="table-responsive">
-              <Table hover responsive size="sm" className="align-middle">
-                <thead>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <tr key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <th key={header.id}>
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                        </th>
-                      ))}
-                    </tr>
-                  ))}
-                </thead>
-                <tbody>
-                  {table.getRowModel().rows.map((row) => (
-                    <tr key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </div>
-          )}
+            <>
+              <div className="table-responsive">
+                <Table hover responsive size="sm" className="align-middle">
+                  <thead>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <th key={header.id}>
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                          </th>
+                        ))}
+                      </tr>
+                    ))}
+                  </thead>
+                  <tbody>
+                    {table.getRowModel().rows.map((row) => (
+                      <tr key={row.id}>
+                        {row.getVisibleCells().map((cell) => (
+                          <td key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
 
-          {totalForPagination > PAGE_SIZE && (
-            <div className="d-flex justify-content-end mt-3">
-              <PaginationControl
-                page={currentPage}
-                between={3}
-                total={totalForPagination}
-                limit={PAGE_SIZE}
-                changePage={handlePageChange}
-                ellipsis={1}
-              />
-            </div>
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-2">
+                <div className="d-flex align-items-center gap-2">
+                  <span className="text-muted small">Hiển thị</span>
+                  <Form.Select
+                    size="sm"
+                    style={{ width: 110 }}
+                    value={pageSize}
+                    onChange={handlePageSizeChange}
+                  >
+                    {PAGE_SIZE_OPTIONS.map((size) => (
+                      <option key={size} value={size}>{size} / trang</option>
+                    ))}
+                  </Form.Select>
+                </div>
+                <PaginationControl
+                  page={currentPage}
+                  between={2}
+                  total={totalForPagination}
+                  limit={pageSize}
+                  changePage={handlePageChange}
+                  ellipsis={1}
+                  next={currentPage < totalPages}
+                  last={currentPage + 1 < totalPages}
+                />
+              </div>
+            </>
           )}
         </Card.Body>
       </Card>
@@ -448,4 +476,4 @@ const OfficerRequestsPage = () => {
   );
 };
 
-export default OfficerRequestsPage;
+export default OfficerManageRequestsPage;

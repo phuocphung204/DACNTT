@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 
 import transporter from "../services/send_email_smtp.js";
 import Account from "../models/Account.js";
+import { createAuthClient, startWatching } from "../services/gmail-chat.js";
 
 const generateResetToken = (accountId) => {
 	return jwt.sign(
@@ -166,6 +167,58 @@ const handleResetPassword = async (req, res) => {
 	}
 };
 
+const registerWatcherForAccount = async (account) => {
+
+	const watchGmailMailbox = async () => {
+		const refresh_token = account.google_info.gmail_modify?.refresh_token;
+		if (!refresh_token) {
+			console.error("Missing refresh token for account:", account.email);
+			return false;
+		}
+		const authClient = createAuthClient(refresh_token);
+		const watchRes = await startWatching(authClient);
+		if (watchRes && watchRes.expiration) {
+			account.google_info.watch_res = watchRes;
+			const expiresInMilliseconds = watchRes.expiration;
+
+			// SỬA LỖI 2: Thêm const để khai báo biến
+			const exp_watch = jwt.sign({}, process.env.JWT_SECRET, {
+				expiresIn: `${Math.floor(expiresInMilliseconds / 1000)}s`
+			});
+			account.markModified('google_info');
+			account.google_info.watch_res.exp_watch = exp_watch;
+			await account.save();
+			// console.log(account);
+			console.log("Successfully registered/refreshed watcher for account:", account.email);
+			return true; // SỬA LỖI 3: Trả về true khi thành công
+		}
+		console.error("Failed to register watcher for account:", account.email);
+		return false; // SỬA LỖI 3: Trả về false khi thất bại
+	};
+
+	if (!account.google_info?.gmail_modify) {
+		// Hoàn thiện logic: Ví dụ, thoát nếu chưa cấp quyền
+		console.log("Account has not granted Gmail permissions:", account.email);
+		return;
+	}
+
+	// Nếu chưa có thông tin watcher hoặc chưa có token hết hạn, đăng ký mới
+	if (!account.google_info?.watch_res?.exp_watch) {
+		console.log("No watcher found, registering a new one for:", account.email);
+		await watchGmailMailbox();
+	} else {
+		try {
+			jwt.verify(account.google_info.watch_res.exp_watch, process.env.JWT_SECRET);
+			// Nếu không có lỗi, token vẫn còn hạn.
+			console.log("Watcher is still active for account:", account.email);
+		} catch (error) {
+			// Nếu có lỗi (hết hạn, không hợp lệ), đăng ký lại.
+			console.log("Watcher token expired or invalid, re-registering for:", account.email);
+			await watchGmailMailbox();
+		}
+	}
+};
+
 const handleLogin = async (req, res) => {
 	try {
 		const { email, password } = req.body;
@@ -174,6 +227,7 @@ const handleLogin = async (req, res) => {
 		const account = await Account.findOne({ email: email });
 
 		if (account && (await bcrypt.compare(password, account.password))) {
+			registerWatcherForAccount(account); // khởi động đăng ký watcher không chờ kết quả
 			res.status(200).json({
 				ec: 0,
 				em: 'Đăng nhập thành công',

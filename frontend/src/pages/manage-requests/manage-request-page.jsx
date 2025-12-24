@@ -24,7 +24,7 @@ import {
   useSendReminderMutation,
 } from "#services/request-services";
 import { formatDateTime } from "#utils/format";
-import { PRIORITY, TIME_RANGE } from "#components/variables";
+import { PRIORITY, TIME_RANGE } from "#components/_variables";
 import FilterClient from "#components/common/filter-cliend";
 
 import styles from "./manage-request-page.module.scss";

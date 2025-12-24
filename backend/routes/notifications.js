@@ -6,7 +6,8 @@ import {
   getMyNotifications,
   markAllNotificationsAsRead,
   markNotificationAsRead,
-  getUnreadNotificationsCount
+  getUnreadNotificationsCount,
+  sendNotification
 } from "../controllers/notification-controller.js";
 
 const router = express.Router();
@@ -30,5 +31,11 @@ router.patch("/read-all", protect, markAllNotificationsAsRead);
 // @route   DELETE /api/notifications/:id
 // @access  Private
 router.delete("/:id", protect, deleteNotification);
+
+router.post("/send", async (req, res) => {
+  const { targetUserId, payload } = req.body;
+  await sendNotification(targetUserId, payload);
+  res.status(200).json({ ec: 200, em: "Notification sent" });
+});
 
 export default router;

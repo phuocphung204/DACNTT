@@ -1,9 +1,10 @@
 import express from "express";
 import { google } from "googleapis";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
 
 import { handleLogin, resetPassword, handleResetPassword } from "../controllers/authController.js";
+import { oauth2ClientSang } from "../services/gmail-chat.js";
 
 const router = express.Router();
 
@@ -41,6 +42,30 @@ router.get("/link/google", (req, res) => {
   res.redirect(url);
 });
 
+router.get("/link/sang/google", (req, res) => {
+  const url = oauth2ClientSang.generateAuthUrl({
+    access_type: "offline",
+    scope: [
+      // 1. Quyền để lấy thông tin cơ bản (Bắt buộc để biết user là ai)
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+
+      // 2. Quyền để Gửi email (Theo yêu cầu của bạn)
+      "https://www.googleapis.com/auth/gmail.send",
+
+      // 3. Quyền để đăng ký Watch & Đọc nội dung mail mới
+      // Bạn cần quyền đọc để:
+      // a) Gọi hàm watch() thành công.
+      // b) Khi Pub/Sub báo về, bạn phải có quyền này mới đọc được nội dung mail đó là gì.
+      "https://www.googleapis.com/auth/gmail.readonly"
+    ],
+    prompt: "consent",
+    include_granted_scopes: true
+  });
+  // console.log("Open this URL in browser to authorize:", url);
+  res.redirect(url);
+});
+
 router.get("/google-link-account/callback", async (req, res) => {
   try {
     if (req.query.error) return res.status(400).send(`OAuth error: ${req.query.error}`);
@@ -52,6 +77,26 @@ router.get("/google-link-account/callback", async (req, res) => {
       message: "Lấy token xong — copy refresh_token vào .env GMAIL_REFRESH_TOKEN",
       refresh_token: tokens.refresh_token,
       tokens
+    });
+  } catch (err) {
+    console.error("Callback error:", err);
+    return res.status(500).send("Callback processing error: " + err.message);
+  }
+});
+
+router.get("/google/callback", async (req, res) => {
+  try {
+    if (req.query.error) return res.status(400).send(`OAuth error: ${req.query.error}`);
+    const code = req.query.code;
+    if (!code) return res.status(400).send("No code returned from Google");
+    const data = await oauth2ClientSang.getToken(code);
+    const { tokens } = data;
+    // console.log("Refresh Tokens", tokens.refresh_token);
+    return res.json({
+      message: "Lấy token xong — copy refresh_token vào .env GMAIL_REFRESH_TOKEN",
+      refresh_token: tokens.refresh_token,
+      tokens,
+      data
     });
   } catch (err) {
     console.error("Callback error:", err);
