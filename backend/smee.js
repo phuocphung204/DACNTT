@@ -21,5 +21,6 @@ const smee = new SmeeClient({
 });
 
 smee.start();
+
 // Khởi động Gmail Watcher
 await initGmailWatcher();

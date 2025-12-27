@@ -12,18 +12,25 @@ const historySchema = new Schema(
 );
 const predictSchema = new Schema(
 	{
-		label_id: { type: String, required: true },
-		label: {
-			type: String, enum: ["Chính sách - Học bổng", "Chương trình thạc sĩ", "Chương trình đào tạo",
-				"Giấy tờ - Xác nhận", "Hành chính - Bảo hiểm", "Học phí - Kế toán",
-				"Hỗ trợ hệ thống - CNTT", "Hỗ trợ khó khăn cá nhân", "Khen thưởng - Kỷ luật",
-				"Ký túc xá", "Phúc khảo - Khảo thí", "Thư viện - Học liệu",
-				"Tư vấn hướng nghiệp", "Tư vấn học tập", "Tư vấn tâm lý",
-				"Yêu cầu học vụ", "Điểm rèn luyện"
-			], required: true
+		category: {
+			label_id: { type: String, required: true },
+			label: {
+				type: String, enum: ["Chính sách - Học bổng", "Chương trình thạc sĩ", "Chương trình đào tạo",
+					"Giấy tờ - Xác nhận", "Hành chính - Bảo hiểm", "Học phí - Kế toán",
+					"Hỗ trợ hệ thống - CNTT", "Hỗ trợ khó khăn cá nhân", "Khen thưởng - Kỷ luật",
+					"Ký túc xá", "Phúc khảo - Khảo thí", "Thư viện - Học liệu",
+					"Tư vấn hướng nghiệp", "Tư vấn học tập", "Tư vấn tâm lý",
+					"Yêu cầu học vụ", "Điểm rèn luyện"
+				], required: true
+			},
+			score: { type: Number, required: true },
+		},
+		priority: {
+			label_id: { type: String, required: true },
+			label: { type: String, enum: ["Low", "Medium", "High", "Critical"], required: true },
+			score: { type: Number, required: true },
 		},
 		department_id: { type: Schema.Types.ObjectId, ref: "Department", required: true },
-		score: { type: Number, required: true },
 		is_used: { type: Boolean, default: false }
 	},
 	{ _id: false }
@@ -46,7 +53,7 @@ const requestSchema = new Schema(
 		student_id: { type: String, required: true },
 		department_id: { type: Schema.Types.ObjectId, ref: "Department", default: null },
 		label: { type: String, default: null }, // Nhãn thủ công lấy từ model AI đã training
-		priority: { type: Number, enum: [1, 2, 3, 4], default: 3 },
+		priority: { type: Number, enum: [0, 1, 2, 3], default: 0 }, // 0: Low, 1: Medium, 2: High, 3: Critical
 		prediction: predictSchema,
 		assigned_to: { type: Schema.Types.ObjectId, ref: "Account", default: null },
 		status: { type: String, enum: ["Pending", "Assigned", "InProgress", "Resolved"], default: "Pending" },

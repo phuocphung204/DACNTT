@@ -129,7 +129,7 @@ connectDB().then(() => {
     // console.log(`Server running on port ${PORT}`);
 
     // Khởi động Model AI
-    // await initModel();
+    await initModel();
   });
 });
 
