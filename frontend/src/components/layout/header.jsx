@@ -3,7 +3,7 @@ import Notifications from "./notifications";
 const Header = ({ handleToggleSidebar }) => {
 
   return (
-    <nav className="app-header navbar navbar-expand bg-body">
+    <nav className="app-header navbar navbar-expand bg-body sticky-top">
       <div className="container-fluid">
         <ul className="navbar-nav d-flex align-items-center w-100">
           <li className="nav-item">

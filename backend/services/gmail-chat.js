@@ -8,31 +8,17 @@ import { NOTIFICATION_TYPES } from "../models/Notification.js";
 import { SOCKET_EVENTS } from "../_variables.js";
 import { socketStore } from "./socket.js";
 import dotenv from "dotenv";
-import fs from "node:fs";
-
+import serviceAccount from "./secret.json" with { type: "json" };
 dotenv.config();
 
-const {
-  SANG_CLIENT_ID,
-  SANG_CLIENT_SECRET,
-  SANG_REDIRECT_URI,
-  GOOGLE_APPLICATION_CREDENTIALS,
-} = process.env;
-
-if (!SANG_CLIENT_ID || !SANG_CLIENT_SECRET || !SANG_REDIRECT_URI) {
-  throw new Error("Missing SANG_CLIENT_ID/SANG_CLIENT_SECRET/SANG_REDIRECT_URI for Gmail OAuth.");
-}
-
-if (!GOOGLE_APPLICATION_CREDENTIALS) {
-  throw new Error("Missing GOOGLE_APPLICATION_CREDENTIALS (path to service account JSON).");
-}
-
-const serviceAccount = JSON.parse(fs.readFileSync(GOOGLE_APPLICATION_CREDENTIALS, "utf8"));
-
-export const oauth2ClientSang = new google.auth.OAuth2(SANG_CLIENT_ID, SANG_CLIENT_SECRET, SANG_REDIRECT_URI);
+export const oauth2ClientSang = new google.auth.OAuth2(
+  process.env.SANG_CLIENT_ID,
+  process.env.SANG_CLIENT_SECRET,
+  process.env.SANG_REDIRECT_URI
+);
 
 export const createAuthClient = (refreshToken) => {
-  const client = new google.auth.OAuth2(SANG_CLIENT_ID, SANG_CLIENT_SECRET, SANG_REDIRECT_URI);
+  const client = new google.auth.OAuth2(process.env.SANG_CLIENT_ID, process.env.SANG_CLIENT_SECRET, process.env.SANG_REDIRECT_URI);
   client.setCredentials({ refresh_token: refreshToken });
   return client;
 };

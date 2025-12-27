@@ -1,6 +1,6 @@
 import express from "express";
 
-import { protect } from "../middlewares/auth.js";
+import { protect, staff } from "../middlewares/auth.js";
 import {
   deleteNotification,
   getMyNotifications,
@@ -37,5 +37,7 @@ router.post("/send", async (req, res) => {
   await sendNotification(targetUserId, payload);
   res.status(200).json({ ec: 200, em: "Notification sent" });
 });
+
+router.post("/remind", protect, staff,)
 
 export default router;

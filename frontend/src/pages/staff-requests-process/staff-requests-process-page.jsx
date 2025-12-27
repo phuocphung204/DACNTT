@@ -24,16 +24,16 @@ import {
   useSendReminderMutation,
 } from "#services/request-services";
 import { formatDateTime } from "#utils/format";
-import { PRIORITY, REQUEST_PRIORITY, REQUEST_STATUS, TIME_RANGE } from "#components/_variables";
+import { PAGE_SIZE_OPTIONS, PRIORITY, REQUEST_PRIORITY, REQUEST_STATUS, TIME_RANGE } from "#components/_variables";
 import FilterClient from "#components/common/filter-cliend";
 
-import styles from "./manage-request-page.module.scss";
+import styles from "./staff-requests-process-page.module.scss";
 
 const PRIORITY_SLA_HOURS = {
-  1: 4,
-  2: 8,
-  3: 24,
-  4: 48,
+  0: 4,
+  1: 8,
+  2: 24,
+  3: 48,
 };
 
 const DUE_SOON_MS = 24 * 60 * 60 * 1000;
@@ -229,6 +229,7 @@ const RequestTable = ({ data, onViewDetail, onSendReminder, remindLoadingId }) =
     </Table>
   );
 };
+
 const RequestDetailModalBody = ({ requestId, onAssigned }) => {
   const [selectedOfficer, setSelectedOfficer] = useState("");
   const [showManual, setShowManual] = useState(false);
@@ -732,7 +733,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
     </div>
   );
 };
-const ManageRequestPage = () => {
+const StaffRequestsProcessPage = () => {
   const { push } = userModalDialogStore(
     useShallow((state) => ({
       push: state.push,
@@ -972,7 +973,7 @@ const ManageRequestPage = () => {
               setPageByTab({ pending: 1, inProgress: 1, resolved: 1 });
             }}
           >
-            {[20, 30, 40, 50].map((size) => (
+            {PAGE_SIZE_OPTIONS.map((size) => (
               <option key={size} value={size}>
                 {size} / trang
               </option>
@@ -1065,4 +1066,4 @@ const ManageRequestPage = () => {
   );
 };
 
-export default ManageRequestPage;
+export default StaffRequestsProcessPage;

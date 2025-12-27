@@ -6,3 +6,5 @@ node_modules/
 .env
 **/.env
 /models/mbert_onnx/
+
+**/secret.json

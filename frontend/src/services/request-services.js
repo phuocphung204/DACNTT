@@ -95,6 +95,13 @@ export const requestService = backendApi.injectEndpoints({
     }),
 
     // Các endpoint cho Officer
+    getMyAssignedRequests: build.query({
+      query: (params) => ({
+        url: "/requests/my-assigned-requests",
+        method: "GET",
+        params,
+      }),
+    }),
     getMyAssignedRequestsForManage: build.query({
       query: (params) => ({
         url: "/requests/my-assigned-requests/manage",
@@ -136,6 +143,7 @@ export const {
   useGetConversationQuery,
 
   // Các endpoint cho Officer
+  useGetMyAssignedRequestsQuery,
   useGetMyAssignedRequestsForManageQuery,
   useSendMailToStudentMutation,
   useReplyToStudentMutation,

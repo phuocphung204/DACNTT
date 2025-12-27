@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { socketStore } from "../services/socket.js";
 import Notification from "../models/Notification.js";
 import { SOCKET_EVENTS } from "../_variables.js";
+import { cat } from "@xenova/transformers";
 
 export const createNotification = async ({ sender, recipient_id, type, entity_id, data }) => {
   // Tạo hoặc cập nhật thông báo
@@ -164,4 +165,13 @@ export const getUnreadNotificationsCount = async (req, res) => {
     return res.status(500).json({ ec: 500, em: error.message });
   }
 };
+
+export const sendRemindNotifications = async (req, res) => {
+  try {
+    const { request_id } = req.body;
+
+  }
+  catch (error) {
+    return res.status(500).json({ ec: 500, em: error.message });
+  }
 

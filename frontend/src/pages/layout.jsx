@@ -72,7 +72,7 @@ const Layout = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="light" á
+        theme="light"
         transition={Flip}
       />, document.body)}
 

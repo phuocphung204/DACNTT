@@ -66,12 +66,12 @@ $admin-header-height: 64px;
 }
 
 .admin-main {
-  overflow-y: scroll;
+  // overflow-y: scroll;
+  padding: 1.5rem;
   grid-area: main;
   min-height: 0;
   background: #f8fafc;
   // transition: width 0.3s ease;
-
 }
 
 .admin-sidebar__offcanvas {

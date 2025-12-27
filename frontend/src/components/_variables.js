@@ -91,16 +91,16 @@ export const WORK_STATUS = Object.freeze({
 
 // request variables
 export const REQUEST_PRIORITY_ENUM = Object.freeze({
+  KHONG: 0,
   MOT: 1,
   HAI: 2,
   BA: 3,
-  BON: 4
 });
 export const REQUEST_PRIORITY = Object.freeze({
-  [REQUEST_PRIORITY_ENUM.MOT]: { label: "Rất cao", value: 1, variant: "danger" },
+  [REQUEST_PRIORITY_ENUM.KHONG]: { label: "Thấp", value: 0, variant: "secondary" },
+  [REQUEST_PRIORITY_ENUM.MOT]: { label: "Trung bình", value: 1, variant: "info" },
   [REQUEST_PRIORITY_ENUM.HAI]: { label: "Cao", value: 2, variant: "warning" },
-  [REQUEST_PRIORITY_ENUM.BA]: { label: "Trung bình", value: 3, variant: "primary" },
-  [REQUEST_PRIORITY_ENUM.BON]: { label: "Thấp", value: 4, variant: "info" }
+  [REQUEST_PRIORITY_ENUM.BA]: { label: "Rất cao", value: 3, variant: "danger" },
 });
 export const REQUEST_STATUS_ENUM = Object.freeze({
   PENDING: "Pending",

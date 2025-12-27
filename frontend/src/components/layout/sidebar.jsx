@@ -4,6 +4,8 @@ import { NavLink } from "react-router-dom";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
 
 import UserActions from "./user-actions";
+import { ACCOUNT_ROLES_ENUM } from "#components/_variables";
+import { useSelector } from "react-redux";
 
 const scrollbarOptions = {
   scrollbars: {
@@ -32,14 +34,15 @@ const NAV_ITEMS = [
   { id: "manage-requests", label: "Quản lý yêu cầu", icon: "bi-folder-check", to: "/quan-ly-yeu-cau" },
   { id: "officer-manage-requests", label: "Yêu cầu", icon: "bi-person-badge", to: "/yeu-cau" },
   { id: "socket-io-setup", label: "Socket.io Setup", icon: "bi-plug", to: "/socket-io-setup" },
-  { id: "staff-requests", label: "Các yêu cầu", icon: "bi-people", to: "/xu-ly-yeu-cau" },
-  { id: "manage-accounts", label: "Quản lý tài khoản", icon: "bi-person-lines-fill", to: "/quan-ly-tai-khoan" },
+  { id: "staff-requests-process", label: "Xử lý yêu cầu", icon: "bi-people", to: "/xu-ly-yeu-cau", allowRoles: [ACCOUNT_ROLES_ENUM.STAFF] },
+  { id: "officer-requests-process", label: "Xử lý yêu cầu", icon: "bi-people", to: "/xu-ly-yeu-cau", allowRoles: [ACCOUNT_ROLES_ENUM.OFFICER] },
+  { id: "manage-accounts", label: "Quản lý tài khoản", icon: "bi-person-lines-fill", to: "/quan-ly-tai-khoan", allowRoles: [ACCOUNT_ROLES_ENUM.ADMIN] },
   { id: "test-page", label: "Test Page", icon: "bi-file-earmark-code", to: "/test-page" },
 ];
 
 const SidebarNav = ({ expanded, onToggle, collapsed }) => {
   const navItems = useMemo(() => NAV_ITEMS, []);
-
+  const accountRole = useSelector((state) => state.auth?.role);
   return (
     <div className="admin-sidebar__inner">
       <div className="admin-sidebar__brand">
@@ -58,7 +61,7 @@ const SidebarNav = ({ expanded, onToggle, collapsed }) => {
           {navItems.map((item) => {
             const hasChildren = !!item.children?.length;
             const isOpen = expanded[item.id];
-
+            if (item.allowRoles && !item.allowRoles.includes(accountRole)) return null;
             if (!hasChildren) {
               return (
                 <NavLink
