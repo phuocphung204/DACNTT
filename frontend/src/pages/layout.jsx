@@ -9,6 +9,8 @@ import "overlayscrollbars/overlayscrollbars.css";
 import { createPortal } from "react-dom";
 import { Flip, ToastContainer } from "react-toastify";
 import ModalDialog from "#components/common/modal-dialog";
+import { connectSocket, disconnectSocket } from "services/axios-config";
+import { useSelector } from "react-redux";
 
 const Layout = () => {
   const [showOffcanvas, setShowOffcanvas] = useState(false);
@@ -16,6 +18,16 @@ const Layout = () => {
   const [isMobileSidebar, setIsMobileSidebar] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 990 : false
   );
+
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    connectSocket();
+    return () => {
+      disconnectSocket();
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const handleResize = () => {

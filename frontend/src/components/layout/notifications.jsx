@@ -41,6 +41,7 @@ const Notifications = () => {
 
   const handleUpdateNotifications = useCallback((data) => {
     const { notification, unread_count } = data;
+    console.log("Received notification update:", data);
     const _id = notification?._id;
     setUnreadCount(unread_count || 0);
     if (!_id) return;
@@ -130,7 +131,7 @@ const Notifications = () => {
           break;
       }
       await markNotificationAsRead(notification._id).unwrap();
-      toast.info("Đã xem thông báo");
+      // toast.info("Đã xem thông báo");
       // refetchList();
       refetchUnread();
     } catch (error) {
@@ -157,6 +158,7 @@ const Notifications = () => {
 
   useEffect(() => {
     if (isUnreadSuccess && unreadData?.dt?.count !== undefined) {
+      console.log("Cập nhật số thông báo chưa đọc:", unreadData.dt.count);
       setUnreadCount(unreadData.dt.count);
     }
   }, [isUnreadSuccess, unreadData]);

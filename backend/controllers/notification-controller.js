@@ -56,6 +56,7 @@ export const sendNotification = async (targetUserId, payload) => {
     unread_count: await countUnreadNotificationsForRecipient(targetUserId)
   };
   io.to(`account_room_${targetUserId}`).emit(SOCKET_EVENTS.NEW_NOTIFICATION, newPayload);
+  console.log("Sent notification to user:", targetUserId, newPayload);
 };
 
 export const markNotificationAsRead = async (req, res) => {
@@ -165,13 +166,3 @@ export const getUnreadNotificationsCount = async (req, res) => {
     return res.status(500).json({ ec: 500, em: error.message });
   }
 };
-
-export const sendRemindNotifications = async (req, res) => {
-  try {
-    const { request_id } = req.body;
-
-  }
-  catch (error) {
-    return res.status(500).json({ ec: 500, em: error.message });
-  }
-

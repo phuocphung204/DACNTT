@@ -1,14 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Badge, Button, Card, Form, ListGroup, Nav, Spinner, Table } from "react-bootstrap";
 import { PaginationControl } from "react-bootstrap-pagination-control";
-import {
-  BsArrowRepeat,
-  BsBell,
-  BsCheckCircle,
-  BsLightningCharge,
-  BsPersonPlus,
-  BsXCircle,
-} from "react-icons/bs";
+import { BsArrowRepeat, BsCheckCircle, BsPersonPlus, BsXCircle } from "react-icons/bs";
 import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { toast } from "react-toastify";
 
@@ -51,7 +44,7 @@ const getDueAt = (request) => {
   if (!createdAt) return null;
   const parsedDate = new Date(createdAt);
   if (Number.isNaN(parsedDate.getTime())) return null;
-  const priority = Number(request?.priority) || 3;
+  const priority = Number(request?.priority) || 0;
   const hours = PRIORITY_SLA_HOURS[priority] || 24;
   return new Date(parsedDate.getTime() + hours * 60 * 60 * 1000);
 };
@@ -117,15 +110,6 @@ const RequestTable = ({ data, onViewDetail, onSendReminder, remindLoadingId }) =
         ),
       },
       {
-        header: "Trạng thái",
-        accessorKey: "status",
-        cell: (info) => (
-          <Badge bg={REQUEST_STATUS[info.getValue()]?.variant}>
-            {REQUEST_STATUS[info.getValue()]?.label}
-          </Badge>
-        ),
-      },
-      {
         header: "Hạn",
         accessorKey: "dueAt",
         cell: (info) => {
@@ -163,19 +147,6 @@ const RequestTable = ({ data, onViewDetail, onSendReminder, remindLoadingId }) =
               >
                 Chi tiết
               </Button>
-              <Button
-                size="sm"
-                variant="outline-secondary"
-                onClick={() => onSendReminder(row.original)}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Spinner animation="border" size="sm" />
-                ) : (
-                  <BsBell className="me-1" />
-                )}
-                Nhắc nhở
-              </Button>
             </div>
           );
         },
@@ -207,7 +178,7 @@ const RequestTable = ({ data, onViewDetail, onSendReminder, remindLoadingId }) =
           </tr>
         ))}
       </thead>
-      <tbody>
+      <tbody className="fw-light">
         {table.getRowModel().rows.map((row) => {
           const rowClass =
             row.original.dueState === "overdue"
@@ -468,8 +439,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
       <div className={styles.suggestionBar}>
         <div className="d-flex flex-wrap align-items-center gap-2">
           <Badge bg="primary">
-            <BsLightningCharge className="me-1" />
-            AI gợi ý
+            Hệ thống đề xuất
           </Badge>
           <span className="fw-semibold">
             Nhãn: {toAsciiLabel(predictionLabel) || "Chưa có"}
@@ -733,6 +703,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
     </div>
   );
 };
+
 const StaffRequestsProcessPage = () => {
   const { push } = userModalDialogStore(
     useShallow((state) => ({
@@ -796,6 +767,7 @@ const StaffRequestsProcessPage = () => {
     const data = requestsResponse?.dt || {};
     return {
       pending: data?.pending?.requests || [],
+      assigned: data?.assigned?.requests || [],
       inProgress: data?.in_progress?.requests || [],
       resolved: data?.resolved?.requests || [],
     };
@@ -811,18 +783,6 @@ const StaffRequestsProcessPage = () => {
         return { ...item, status, dueAt, dueState };
       });
 
-    // const filterPriority = (list) => {
-    //   if (!filterValues.priority || filterValues.priority.length === 0) return list;
-    //   return list.filter((item) =>
-    //     filterValues.priority.includes(String(item.priority || ""))
-    //   );
-    // };
-
-    // const filterStatus = (list) => {
-    //   if (!filterValues.status || filterValues.status.length === 0) return list;
-    //   return list.filter((item) => filterValues.status.includes(item.status));
-    // };
-
     const filterPriority = (list) => {
       if (!clientFilterValues.priority || clientFilterValues.priority.length === 0) return list;
       return list.filter((item) =>
@@ -836,10 +796,11 @@ const StaffRequestsProcessPage = () => {
     };
 
     const pending = filterStatus(filterPriority(applyDecorators(requestBuckets.pending, "Pending"))).sort(sortByCreatedAtDesc);
+    const assigned = filterStatus(filterPriority(applyDecorators(requestBuckets.assigned, "Assigned"))).sort(sortByCreatedAtDesc);
     const inProgress = filterStatus(filterPriority(applyDecorators(requestBuckets.inProgress, "InProgress"))).sort(sortByCreatedAtDesc);
     const resolved = filterStatus(filterPriority(applyDecorators(requestBuckets.resolved, "Resolved"))).sort(sortByCreatedAtDesc);
 
-    return { pending, inProgress, resolved };
+    return { pending, inProgress, resolved, assigned };
   }, [requestBuckets, clientFilterValues]);
   // }, [requestBuckets, filterValues.priority, filterValues.status]);
   const groupList = useMemo(
@@ -849,6 +810,12 @@ const StaffRequestsProcessPage = () => {
         title: "Mới nhận",
         variant: "secondary",
         data: filteredBuckets.pending,
+      },
+      {
+        key: "assigned",
+        title: "Đã phân công",
+        variant: "info",
+        data: filteredBuckets.assigned,
       },
       {
         key: "inProgress",
@@ -993,6 +960,7 @@ const StaffRequestsProcessPage = () => {
       </div>
     );
   };
+
   return (
     <div>
       <div className={styles.pageHeader}>

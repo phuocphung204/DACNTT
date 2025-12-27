@@ -55,11 +55,23 @@ export const axiosBaseQuery = ({ baseUrl } = { baseUrl: "" }) =>
   };
 
 export const socket = io(BASE_URL, {
-  auth: {
-    token: getUserToken()
-  },
-  transports: ['websocket'] // Ép dùng websocket ngay lập tức để giảm độ trễ
+  autoConnect: false,
+  transports: ["websocket"], // Ép dùng websocket ngay lập tức để giảm độ trễ
 });
+
+export const connectSocket = (token = getUserToken()) => {
+  if (!token) return;
+  socket.auth = { token };
+  if (!socket.connected) {
+    socket.connect();
+  }
+};
+
+export const disconnectSocket = () => {
+  if (socket.connected) {
+    socket.disconnect();
+  }
+};
 
 socket.on("connect_error", (err) => {
   console.log("Lỗi kết nối:", err);

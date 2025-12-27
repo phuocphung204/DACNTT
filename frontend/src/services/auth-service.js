@@ -1,4 +1,5 @@
 import { logout, setCredentials } from "#redux/auth-slice";
+import { connectSocket, disconnectSocket } from "./axios-config";
 import { backendApi } from "./backend-api"
 
 export const authService = backendApi.injectEndpoints({
@@ -23,7 +24,9 @@ export const authService = backendApi.injectEndpoints({
       invalidatesTags: ["User"],
       onQueryStarted: (_, { dispatch, queryFulfilled }) => {
         queryFulfilled.then(({ data }) => {
-          dispatch(setCredentials({ token: data.dt?.token, role: data.dt?.role }));
+          const token = data.dt?.token;
+          dispatch(setCredentials({ token, role: data.dt?.role }));
+          connectSocket(token);
         }).catch((error) => {
           console.error("Login failed: ", error);
         });
@@ -41,6 +44,7 @@ export const authService = backendApi.injectEndpoints({
         } catch (error) {
           console.error("Logout failed: ", error);
         } finally {
+          disconnectSocket();
           dispatch(logout());
         }
       },
