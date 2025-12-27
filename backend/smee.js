@@ -1,6 +1,6 @@
 import { setGlobalDispatcher, Agent } from 'undici';
 import SmeeClient from 'smee-client';
-// import { initGmailWatcher } from "./services/email_ggapi.js";
+import { initGmailWatcher } from "./services/email_ggapi.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -21,5 +21,6 @@ const smee = new SmeeClient({
 });
 
 smee.start();
-// // Khởi động Gmail Watcher
-// await initGmailWatcher();
+
+// Khởi động Gmail Watcher
+await initGmailWatcher();

@@ -15,17 +15,23 @@ export const createRequest = async (req, res) => {
 
         // Gọi model để dự đoán nhãn
         const predictionResponse = await predict_label(preprocessedContent);
+        console.log(1);
         if (predictionResponse.ec !== 200) {
+            console.log("Prediction Error:", predictionResponse.em);
             return res.status(predictionResponse.ec).json({ ec: predictionResponse.ec, em: predictionResponse.em });
         }
         console.log("Prediction Response:", predictionResponse.dt);
 
-        // Lấy nhãn dự đoán
-        const label_id = predictionResponse.dt.id;
+        // Lấy dự đoán
+        const category = predictionResponse.dt.category;
+        const priority = predictionResponse.dt.priority;
+
+        const label_category = category.label;
 
         // Tìm department tương ứng với nhãn dự đoán
-        const department = await Department.findOne({ labels: { $elemMatch: { label_id } } });
+        const department = await Department.findOne({ "labels.label": label_category });
         if (!department) {
+            console.log("No department found for label_category:", label_category);
             return res.status(404).json({ ec: 404, em: "No department found for the predicted label" });
         }
         // Tạo request mới
@@ -35,10 +41,17 @@ export const createRequest = async (req, res) => {
             content,
             student_id,
             prediction: {
-                label_id: label_id,
-                label: predictionResponse.dt.label,
-                department_id: department._id,
-                score: predictionResponse.dt.score
+                category: {
+                    label_id: category.id,
+                    label: category.label,
+                    score: category.score
+                },
+                priority: {
+                    label_id: priority.id,
+                    label: priority.label,
+                    score: priority.score
+                },
+                department_id: department._id
             },
             attachments: attachments || [],
             history: [{ status: "Pending" }]
@@ -228,13 +241,25 @@ export const usePredictionByRequestId = async (req, res) => {
             return res.status(404).json({ ec: 404, em: "Request not found" });
         }
 
-        request.label = request.prediction.label;
+        request.label = request.prediction.category.label;
         request.department_id = request.prediction.department_id;
         request.prediction.is_used = true;
         request.assigned_to = assigned_to;
-        request.priority = 3; // Cập nhật nếu thuật toán dự đoán được priority
+        
+        switch (request.prediction.priority.label) {
+            case "Medium":
+                request.priority = 1;
+                break;
+            case "High":
+                request.priority = 2;
+                break;
+            case "Critical":
+                request.priority = 3;
+                break;
+            default:
+                request.priority = 0;
+        }
         await request.save();
-        //TODO Mặc định trung bình: Sửa sau nếu thêm được dự đoán priority từ model
         
         res.status(200).json({ ec: 200, em: "Prediction marked as used", dt: request });
     } catch (error) {

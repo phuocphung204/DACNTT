@@ -14,8 +14,8 @@ const departmentSchema = new Schema(
     {
         name: { type: String, required: true, unique: true },
         description: { type: String, required: true },
-        labels: [labelSchema]
-        // staff_in_charge: { type: Schema.Types.ObjectId, ref: "Account" },
+        labels: [labelSchema],
+        email: { type: String, required: true, unique: true }
     },
     {
         timestamps: {
