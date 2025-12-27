@@ -195,9 +195,12 @@ export const getAllRequests = async (req, res) => {
             filter.created_at = { $gte: startOfDay, $lt: endOfDay };
         }
 
-        const [requests_pending, requests_in_progress, requests_resolved,
-            count_pending, count_in_progress, count_resolved, total] = await Promise.all([
+        const [requests_pending, requests_assigned, requests_in_progress, requests_resolved,
+            count_pending, count_assigned, count_in_progress, count_resolved, total] = await Promise.all([
                 Request.find({ ...filter, status: "Pending" })
+                    .sort({ created_at: -1, priority: 1 })
+                    .select('_id student_email subject created_at updated_at status priority label assigned_to'),
+                Request.find({ ...filter, status: "Assigned" })
                     .sort({ created_at: -1, priority: 1 })
                     .select('_id student_email subject created_at updated_at status priority label assigned_to'),
                 Request.find({ ...filter, status: "InProgress" })
@@ -207,6 +210,7 @@ export const getAllRequests = async (req, res) => {
                     .sort({ created_at: -1, priority: 1 })
                     .select('_id student_email subject created_at updated_at status priority label assigned_to'),
                 Request.countDocuments({ ...filter, status: "Pending" }),
+                Request.countDocuments({ ...filter, status: "Assigned" }),
                 Request.countDocuments({ ...filter, status: "InProgress" }),
                 Request.countDocuments({ ...filter, status: "Resolved" }),
                 Request.countDocuments({ ...filter })
@@ -216,6 +220,7 @@ export const getAllRequests = async (req, res) => {
             ec: 200, em: "Requests retrieved successfully", dt: {
                 total_requests: total,
                 pending: { requests: requests_pending, total: count_pending },
+                assigned: { requests: requests_assigned, total: count_assigned },
                 in_progress: { requests: requests_in_progress, total: count_in_progress },
                 resolved: { requests: requests_resolved, total: count_resolved }
             }
