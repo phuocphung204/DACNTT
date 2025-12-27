@@ -29,7 +29,7 @@ const predictSchema = new Schema(
 	{ _id: false }
 );
 
-const attachmentSchema = new Schema(
+export const attachmentSchema = new Schema(
 	{
 		originalname: { type: String, required: true },
 		mime_type: { type: String, required: true },

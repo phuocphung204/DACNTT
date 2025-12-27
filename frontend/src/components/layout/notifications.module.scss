@@ -11,6 +11,32 @@
 
 .popover {
   font-size: 14px;
-  width: 280px;
-  height: 200px;
+  min-width: 330px;
+  // height: 350px;
+}
+
+.notificationRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.notificationIcon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background-color: rgba(0, 0, 0, 0.05);
+  font-size: 16px;
+  flex: 0 0 34px;
+}
+
+.iconAssigned {
+  color: #fd7e14;
+}
+
+.iconInfo {
+  color: #0dcaf0;
 }

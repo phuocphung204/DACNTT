@@ -24,38 +24,10 @@ import {
   useSendReminderMutation,
 } from "#services/request-services";
 import { formatDateTime } from "#utils/format";
-import { PRIORITY, TIME_RANGE } from "#components/_variables";
+import { PRIORITY, REQUEST_PRIORITY, REQUEST_STATUS, TIME_RANGE } from "#components/_variables";
 import FilterClient from "#components/common/filter-cliend";
 
 import styles from "./manage-request-page.module.scss";
-
-const PRIORITY_LABELS = {
-  1: "Khẩn cấp",
-  2: "Cao",
-  3: "Trung bình",
-  4: "Thấp",
-};
-
-const PRIORITY_VARIANTS = {
-  1: "danger",
-  2: "warning",
-  3: "info",
-  4: "secondary",
-};
-
-const STATUS_LABELS = {
-  Pending: "Mới nhận",
-  Assigned: "Đang xử lý",
-  InProgress: "Đang xử lý",
-  Resolved: "Đã xử lý",
-};
-
-const STATUS_VARIANTS = {
-  Pending: "secondary",
-  Assigned: "warning",
-  InProgress: "warning",
-  Resolved: "success",
-};
 
 const PRIORITY_SLA_HOURS = {
   1: 4,
@@ -73,16 +45,6 @@ const normalizeStatus = (status) => {
   }
   return "Pending";
 };
-
-const getPriorityLabel = (priority) =>
-  PRIORITY_LABELS[Number(priority)] || "Trung bình";
-
-const getPriorityVariant = (priority) =>
-  PRIORITY_VARIANTS[Number(priority)] || "secondary";
-
-const getStatusLabel = (status) => STATUS_LABELS[status] || "Khác";
-
-const getStatusVariant = (status) => STATUS_VARIANTS[status] || "secondary";
 
 const getDueAt = (request) => {
   const createdAt = request?.created_at || request?.createdAt;
@@ -149,8 +111,8 @@ const RequestTable = ({ data, onViewDetail, onSendReminder, remindLoadingId }) =
         header: "Ưu tiên",
         accessorKey: "priority",
         cell: (info) => (
-          <Badge bg={getPriorityVariant(info.getValue())}>
-            {getPriorityLabel(info.getValue())}
+          <Badge bg={REQUEST_PRIORITY[info.getValue()]?.variant}>
+            {REQUEST_PRIORITY[info.getValue()]?.label}
           </Badge>
         ),
       },
@@ -158,8 +120,8 @@ const RequestTable = ({ data, onViewDetail, onSendReminder, remindLoadingId }) =
         header: "Trạng thái",
         accessorKey: "status",
         cell: (info) => (
-          <Badge bg={getStatusVariant(info.getValue())}>
-            {getStatusLabel(info.getValue())}
+          <Badge bg={REQUEST_STATUS[info.getValue()]?.variant}>
+            {REQUEST_STATUS[info.getValue()]?.label}
           </Badge>
         ),
       },
@@ -512,7 +474,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
             Nhãn: {toAsciiLabel(predictionLabel) || "Chưa có"}
           </span>
           <span className="text-muted">
-            Ưu tiên: {getPriorityLabel(detail?.priority)}
+            Ưu tiên: {REQUEST_PRIORITY[detail?.priority]?.label}
           </span>
           {predictionScore !== undefined && (
             <span className="text-muted">
@@ -632,7 +594,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
                   }))
                 }
               >
-                {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
+                {Object.entries(REQUEST_PRIORITY).map(([value, { label }]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
@@ -682,11 +644,11 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
           <Card className="h-100">
             <Card.Body>
               <div className="d-flex flex-wrap gap-2 mb-2">
-                <Badge bg={getStatusVariant(detail.status)}>
-                  {getStatusLabel(detail.status)}
+                <Badge bg={REQUEST_STATUS[detail.status]?.variant}>
+                  {REQUEST_STATUS[detail.status]?.label}
                 </Badge>
-                <Badge bg={getPriorityVariant(detail.priority)}>
-                  {getPriorityLabel(detail.priority)}
+                <Badge bg={REQUEST_PRIORITY[detail.priority]?.variant}>
+                  {REQUEST_PRIORITY[detail.priority]?.label}
                 </Badge>
                 <span className="text-muted small">
                   {formatDateTime(detail.created_at)}

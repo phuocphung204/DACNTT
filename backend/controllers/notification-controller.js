@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { io } from "../server.js";
+import { socketStore } from "../services/socket.js";
 import Notification from "../models/Notification.js";
 import { SOCKET_EVENTS } from "../_variables.js";
 
@@ -49,11 +49,12 @@ export const countUnreadNotificationsForRecipient = async (recipient_id) => {
 }
 
 export const sendNotification = async (targetUserId, payload) => {
+  const io = socketStore.getIO();
   const newPayload = {
     notification: payload,
     unread_count: await countUnreadNotificationsForRecipient(targetUserId)
   };
-  io.to(`notification_account_${targetUserId}`).emit(SOCKET_EVENTS.NEW_NOTIFICATION, newPayload);
+  io.to(`account_room_${targetUserId}`).emit(SOCKET_EVENTS.NEW_NOTIFICATION, newPayload);
 };
 
 export const markNotificationAsRead = async (req, res) => {

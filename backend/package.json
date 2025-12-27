@@ -20,6 +20,7 @@
     "dotenv": "^16.3.1",
     "express": "^5.1.0",
     "googleapis": "^166.0.0",
+    "html-to-text": "9.0.5",
     "jsonwebtoken": "^9.0.2",
     "mailparser": "^3.9.0",
     "mongoose": "^7.5.0",

@@ -89,6 +89,37 @@ export const WORK_STATUS = Object.freeze({
   [WORK_STATUS_ENUM.RETIRED]: { label: "Đã nghỉ", value: "Retired", variant: "secondary" }
 });
 
-export const WEB_SOCKET_EVENTS = Object.freeze({
+// request variables
+export const REQUEST_PRIORITY_ENUM = Object.freeze({
+  MOT: 1,
+  HAI: 2,
+  BA: 3,
+  BON: 4
+});
+export const REQUEST_PRIORITY = Object.freeze({
+  [REQUEST_PRIORITY_ENUM.MOT]: { label: "Rất cao", value: 1, variant: "danger" },
+  [REQUEST_PRIORITY_ENUM.HAI]: { label: "Cao", value: 2, variant: "warning" },
+  [REQUEST_PRIORITY_ENUM.BA]: { label: "Trung bình", value: 3, variant: "primary" },
+  [REQUEST_PRIORITY_ENUM.BON]: { label: "Thấp", value: 4, variant: "info" }
+});
+export const REQUEST_STATUS_ENUM = Object.freeze({
+  PENDING: "Pending",
+  ASSIGNED: "Assigned",
+  IN_PROGRESS: "InProgress",
+  RESOLVED: "Resolved"
+});
+export const REQUEST_STATUS = Object.freeze({
+  [REQUEST_STATUS_ENUM.PENDING]: { label: "Đang chờ", value: "Pending", variant: "warning" },
+  [REQUEST_STATUS_ENUM.ASSIGNED]: { label: "Đã phân công", value: "Assigned", variant: "primary" },
+  [REQUEST_STATUS_ENUM.IN_PROGRESS]: { label: "Đang tiến hành", value: "InProgress", variant: "info" },
+  [REQUEST_STATUS_ENUM.RESOLVED]: { label: "Đã giải quyết", value: "Resolved", variant: "success" }
+});
+
+
+export const SOCKET_EVENTS = Object.freeze({
   NEW_NOTIFICATION: "new_notification",
+  NEW_CHAT_MESSAGE: "new_chat_message",
+  JOIN_ROOM: "join_room",
+  LEAVE_ROOM: "leave_room",
+  IN_CHAT_REQUEST_PREFIX: (id) => `in_chat_request_${id}`,
 });

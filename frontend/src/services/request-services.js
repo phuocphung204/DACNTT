@@ -71,7 +71,7 @@ export const requestService = backendApi.injectEndpoints({
             return {
               error: {
                 status: response.status,
-                message: "Khong the tai tep dinh kem",
+                message: "Không thể tải tệp đính kèm",
               },
             };
           }
@@ -80,16 +80,21 @@ export const requestService = backendApi.injectEndpoints({
         } catch (error) {
           return {
             error: {
-              message: error?.message || "Khong the tai tep dinh kem",
+              message: error?.message || "Không thể tải tệp đính kèm",
             },
           };
         }
       },
     }),
 
-    /**
-     * Các endpoint cho Officer
-     */
+    getConversation: build.query({
+      query: (requestId) => ({
+        url: `/requests/${requestId}/conversation`,
+        method: "GET",
+      }),
+    }),
+
+    // Các endpoint cho Officer
     getMyAssignedRequestsForManage: build.query({
       query: (params) => ({
         url: "/requests/my-assigned-requests/manage",
@@ -97,6 +102,23 @@ export const requestService = backendApi.injectEndpoints({
         params,
       }),
     }),
+
+    sendMailToStudent: build.mutation({
+      query: ({ requestId, payload }) => ({
+        url: `/requests/${requestId}/send-mail`,
+        method: "POST",
+        data: payload,
+      }),
+    }),
+
+    replyToStudent: build.mutation({
+      query: ({ requestId, payload }) => ({
+        url: `/requests/${requestId}/reply`,
+        method: "POST",
+        data: payload,
+      }),
+    }),
+
   }),
 
   overrideExisting: false,
@@ -111,7 +133,10 @@ export const {
   useGetOfficersByDepartmentQuery,
   useSendReminderMutation,
   useDownloadAttachmentMutation,
+  useGetConversationQuery,
 
   // Các endpoint cho Officer
   useGetMyAssignedRequestsForManageQuery,
+  useSendMailToStudentMutation,
+  useReplyToStudentMutation,
 } = requestService;

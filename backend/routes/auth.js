@@ -57,7 +57,10 @@ router.get("/link/sang/google", (req, res) => {
       // Bạn cần quyền đọc để:
       // a) Gọi hàm watch() thành công.
       // b) Khi Pub/Sub báo về, bạn phải có quyền này mới đọc được nội dung mail đó là gì.
-      "https://www.googleapis.com/auth/gmail.readonly"
+      "https://www.googleapis.com/auth/gmail.readonly",
+
+      // 4. Quyền để Sửa đổi nhãn (Gỡ nhãn UNREAD) - QUAN TRỌNG ĐỂ FIX LỖI 403
+      "https://www.googleapis.com/auth/gmail.modify"
     ],
     prompt: "consent",
     include_granted_scopes: true

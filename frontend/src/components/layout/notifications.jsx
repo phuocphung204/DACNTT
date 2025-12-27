@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Badge, Button, ListGroup, OverlayTrigger, Popover, Spinner, Stack } from "react-bootstrap";
-import { BsBellFill, BsCheck2All, BsInboxFill } from "react-icons/bs";
+import { Badge, Button, ListGroup, OverlayTrigger, Popover, Spinner } from "react-bootstrap";
+import { BsBellFill, BsCheck2All, BsEnvelopeAt, BsFillTagFill } from "react-icons/bs";
 import { toast } from "react-toastify";
 
 import { useGetMyNotificationsQuery, useGetUnreadNotificationsCountQuery, useMarkAllNotificationsAsReadMutation, useMarkNotificationAsReadMutation } from "#services";
-import { NOTIFICATION_TYPES, WEB_SOCKET_EVENTS } from "../_variables";
+import { NOTIFICATION_TYPES, SOCKET_EVENTS } from "../_variables";
 import { formatDateTime } from "#utils/format";
 import styles from "./notifications.module.scss";
 import { socket } from "services/axios-config";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
 
 const MAX_DISPLAY = 10;
 
@@ -16,8 +18,10 @@ const Notifications = () => {
   const navigate = useNavigate();
   const [showPopover, setShowPopover] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
-
-  const { data: unreadData, isSuccess: isUnreadSuccess, refetch: refetchUnread } = useGetUnreadNotificationsCountQuery();
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const { data: unreadData, isSuccess: isUnreadSuccess, refetch: refetchUnread } = useGetUnreadNotificationsCountQuery(
+    { skip: !isAuthenticated }
+  );
   const [unreadCount, setUnreadCount] = useState(0);
 
   const {
@@ -27,6 +31,7 @@ const Notifications = () => {
     refetch: refetchList,
   } = useGetMyNotificationsQuery(
     { limit: MAX_DISPLAY },
+    { skip: !isAuthenticated }
   );
   const [notifications, setNotifications] = useState([]);
 
@@ -50,19 +55,44 @@ const Notifications = () => {
     setNotifications(newNotifications);
   }, [notifications]);
 
+  const renderNotificationIcon = (notification) => {
+    switch (notification.type) {
+      case NOTIFICATION_TYPES.REQUEST_ASSIGNED:
+        return <BsFillTagFill className={styles.iconAssigned} />;
+      case NOTIFICATION_TYPES.REQUEST_REPLY_STUDENT:
+        return <BsEnvelopeAt className={styles.iconInfo} />;
+      default:
+        return <BsBellFill className="text-muted" />;
+    }
+  };
+
   const renderNotificationContent = (notification) => {
     if (notification.type === NOTIFICATION_TYPES.REQUEST_ASSIGNED) {
       const senderName = notification.senders?.[0]?.name || "Hệ thống";
       const subject = notification.data?.request_subject || "yêu cầu mới";
       return (
         <>
-          <div className="d-flex align-items-center gap-2">
-            <BsInboxFill className="text-primary" />
-            <div className="fw-semibold text-dark">Được phân công xử lý</div>
-          </div>
+          <div className="fw-semibold text-dark">Được phân công xử lý</div>
           <div className="small text-muted">
             {senderName} đã giao: <span className="fw-semibold text-dark">{subject}</span>
           </div>
+        </>
+      );
+    }
+
+    if (notification.type === NOTIFICATION_TYPES.REQUEST_REPLY_STUDENT) {
+      const senderName = notification.senders?.[0]?.name || "Sinh viên";
+      const subject = notification.data?.request_subject || "yêu cầu";
+      const preview = notification.data?.message_preview;
+      return (
+        <>
+          <div className="fw-semibold text-dark">Sinh viên phản hồi</div>
+          <div className="small text-muted">
+            Có phản hồi về: <span className="fw-semibold text-dark">{subject}</span>
+          </div>
+          {preview && (
+            <div className="small text-muted fst-italic">"{preview}"</div>
+          )}
         </>
       );
     }
@@ -87,6 +117,7 @@ const Notifications = () => {
     try {
       switch (notification.type) {
         case NOTIFICATION_TYPES.REQUEST_ASSIGNED:
+        case NOTIFICATION_TYPES.REQUEST_REPLY_STUDENT:
           // Chuyển trang đến request
           const requestId = notification?.entity_id;
           if (!requestId) {
@@ -137,12 +168,12 @@ const Notifications = () => {
   }, [showPopover]);
 
   useEffect(() => {
-    socket.on(WEB_SOCKET_EVENTS.NEW_NOTIFICATION, (data) => {
+    socket.on(SOCKET_EVENTS.NEW_NOTIFICATION, (data) => {
       console.log("Có thông báo mới:", data);
       canRefetch.current = false;
       handleUpdateNotifications(data);
     });
-    return () => socket.off(WEB_SOCKET_EVENTS.NEW_NOTIFICATION);
+    return () => socket.off(SOCKET_EVENTS.NEW_NOTIFICATION);
   }, [handleUpdateNotifications]);
 
 
@@ -150,8 +181,8 @@ const Notifications = () => {
   const badgeContent = unreadCount > MAX_DISPLAY ? `+${MAX_DISPLAY}` : unreadCount;
 
   const popover = (
-    <Popover className={`${styles.popover} fw-normal d-flex flex-column`}>
-      <Popover.Header as="div" className="bg-light d-flex align-items-center justify-content-between py-2 px-3">
+    <Popover className={`${styles.popover} fw-normal d-flex flex-column`} >
+      <Popover.Header as="div" className="flex-shrink-0 bg-light d-flex align-items-center justify-content-between py-2 px-3">
         <span className="fw-semibold">Thông báo</span>
         <Button
           variant="link"
@@ -160,11 +191,14 @@ const Notifications = () => {
           onClick={handleMarkAllAsRead}
           disabled={isMarkingAll || notifications.length === 0}
         >
-          <BsCheck2All />
-          <span>{isMarkingAll ? "Đang xử lý..." : "Đánh dấu tất cả đã đọc"}</span>
+          {isMarkingAll ?
+            (<Spinner title="Đang xử lý..." animation="border" size="sm" />)
+            :
+            (<BsCheck2All title="Đánh dấu tất cả đã đọc" />)
+          }
         </Button>
       </Popover.Header>
-      <Popover.Body className="d-flex flex-column h-100 p-0 flex-grow-1">
+      <Popover.Body className="d-flex flex-column p-0 flex-grow-1" style={{ height: 330 }}>
         {isLoadingList && (
           <div className="d-flex justify-content-center align-items-center py-4">
             <Spinner animation="border" size="sm" />
@@ -179,26 +213,38 @@ const Notifications = () => {
         )}
 
         {!isLoadingList && notifications.length > 0 && (
-          <ListGroup variant="flush" className="overflow-auto" style={{ maxHeight: 260 }}>
-            {notifications.slice(0, MAX_DISPLAY).map((notification) => (
-              <ListGroup.Item
-                key={notification._id}
-                action
-                onClick={() => handleMarkAsRead(notification)}
-                className={`py-2 ${notification.is_read ? "" : "bg-light"}`}
-              >
-                <Stack direction="horizontal" gap={2}>
-                  <div className="flex-grow-1">
-                    {renderNotificationContent(notification)}
-                    <div className="small text-muted mt-1">{formatDateTime(notification.created_at)}</div>
+          <OverlayScrollbarsComponent
+            options={{ scrollbars: { autoHide: "leave", clickScroll: true, autoHideDelay: 300, } }}
+            className="rounded-2"
+          >
+            <ListGroup variant="flush">
+              {notifications.slice(0, MAX_DISPLAY).map((notification) => (
+                <ListGroup.Item
+                  key={notification._id}
+                  action
+                  onClick={() => handleMarkAsRead(notification)}
+                  className={`py-2 ${notification.is_read ? "" : "bg-light"}`}
+                >
+                  <div className={styles.notificationRow}>
+                    <div className={styles.notificationIcon}>
+                      {renderNotificationIcon(notification)}
+                    </div>
+                    <div className="flex-grow-1">
+                      <div className="d-flex align-items-start justify-content-between gap-2">
+                        <div className="flex-grow-1">
+                          {renderNotificationContent(notification)}
+                        </div>
+                        {!notification.is_read && (
+                          <Badge bg="primary" pill className="flex-shrink-0">New</Badge>
+                        )}
+                      </div>
+                      <div className="small text-muted mt-1">{formatDateTime(notification.created_at)}</div>
+                    </div>
                   </div>
-                  {!notification.is_read && (
-                    <Badge bg="primary" pill>New</Badge>
-                  )}
-                </Stack>
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          </OverlayScrollbarsComponent>
         )}
       </Popover.Body>
     </Popover>

@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+
+<body style="margin:0;padding:0;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;font-family:Arial,Helvetica,sans-serif;">
+
+          <tr>
+            <td style="padding:18px 22px;background:#0f172a;color:#ffffff;">
+              <div style="font-size:18px;font-weight:700;">
+                Giải đáp thắc mắc của sinh viên
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:22px;color:#111827;font-size:14px;line-height:1.6;">
+              <p>Chào <b contenteditable="true">ten_sinh_vien</b>,</p>
+
+              <p>
+                Về thắc mắc của bạn, bên mình xin phản hồi như sau:
+              </p>
+
+              <div contenteditable="true" style="border-left:4px solid #3b82f6;background:#eff6ff;
+                  padding:12px 14px;border-radius:8px;">
+                giai_dap_thac_mac_cua_sinh_vien
+              </div>
+
+              <p style="margin-top:14px;">
+                Bạn vui lòng thực hiện theo hướng dẫn trên.
+                Nếu còn điểm nào chưa rõ, cứ phản hồi lại email này.
+              </p>
+
+              <p contenteditable="true" style="margin:16px 0 0;color:#6b7280;font-size:12px;">
+                Trân trọng,<br />
+                phong_cong_tac_sinh_vien
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding:12px 22px;background:#f9fafb;border-top:1px solid #e5e7eb;
+                font-size:12px;color:#6b7280;">
+              Email này được gửi từ hệ thống hỗ trợ sinh viên.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>

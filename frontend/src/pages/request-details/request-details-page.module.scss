@@ -1,4 +1,5 @@
-.messageList {
+.messageList,
+.mailMessage {
   max-height: 420px;
   min-height: 260px;
   overflow-y: auto;
@@ -6,6 +7,12 @@
   border: 1px solid #e9ecef;
   border-radius: 12px;
   padding: 16px;
+}
+
+.mailMessage {
+  max-height: fit-content;
+  min-height: 200px;
+  background-color: #f5f7fa;
 }
 
 .messageRow {
@@ -41,6 +48,38 @@
   white-space: pre-wrap;
 }
 
+.messageTime {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6c757d;
+  text-align: right;
+}
+
+.replyPreview {
+  background-color: rgba(108, 117, 125, 0.12);
+  border-left: 4px solid #0d6efd;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.replyPreviewAuthor {
+  font-weight: 600;
+  font-size: 14px;
+  color: #0b5ed7;
+  margin-bottom: 4px;
+}
+
+.replyPreviewContent {
+  font-size: 13px;
+  color: #495057;
+  white-space: pre-wrap;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
 .chatAttachment {
   margin-top: 6px;
   font-size: 13px;
@@ -53,4 +92,89 @@
   border-radius: 12px;
   padding: 12px;
   background: #fdfdfe;
+}
+
+.mailCard {
+  background: #ffffff;
+  border: 1px solid #e6e9ef;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.mailHeader {
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #f8fafc, #eef2ff);
+  border-bottom: 1px solid #e6e9ef;
+}
+
+.mailHeaderTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.mailTitle {
+  font-weight: 600;
+  font-size: 15px;
+  color: #111827;
+}
+
+.mailMeta {
+  margin-top: 8px;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.mailMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mailMetaLabel {
+  color: #6b7280;
+  min-width: 56px;
+}
+
+.mailMetaValue {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.mailSwitch {
+  padding: 10px 16px;
+  background: #f8f9fb;
+  border-bottom: 1px solid #e6e9ef;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mailBody {
+  padding: 16px;
+  background: #ffffff;
+}
+
+.mailBodyFrame {
+  width: 100%;
+  border: 0;
+  background: #ffffff;
+  display: block;
+}
+
+.mailBodyText {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: #111827;
+}
+
+.mailAttachments {
+  padding: 12px 16px;
+  background: #f8f9fb;
+  border-top: 1px dashed #dee2e6;
+  color: #0d6efd;
+  font-size: 13px;
+  word-break: break-word;
 }

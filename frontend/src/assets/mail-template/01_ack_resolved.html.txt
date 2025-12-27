@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+
+<body style="margin:0;padding:0;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;font-family:Arial,Helvetica,sans-serif;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:18px 22px;background:#1f2937;color:#ffffff;">
+              <div style="font-size:18px;font-weight:700;margin-top:6px;">
+                Phản hồi về yêu cầu của bạn
+              </div>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding:22px;color:#111827;font-size:14px;line-height:1.6;">
+              <p style="margin:0 0 12px;">
+                Chào <b contenteditable="true">ten_sinh_vien</b>,
+              </p>
+
+              <p style="margin:0 0 12px;">
+                Bên mình đã kiểm tra và xử lý xong yêu cầu / thắc mắc của bạn.
+                Thông tin phản hồi chi tiết như sau:
+              </p>
+
+              <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px;">
+                <div style="font-weight:700;margin-bottom:6px;">
+                  Nội dung phản hồi
+                </div>
+                <div contenteditable="true">
+                  noi_dung_phan_hoi
+                </div>
+              </div>
+
+              <p style="margin:14px 0 0;">
+                Nếu bạn còn thắc mắc hoặc cần hỗ trợ thêm, bạn có thể reply email này để
+                bên mình hỗ trợ tiếp nhé.
+              </p>
+
+              <p contenteditable="true" style="margin:16px 0 0;color:#6b7280;font-size:12px;">
+                Trân trọng,<br />
+                phong_cong_tac_sinh_vien
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:12px 22px;background:#f9fafb;border-top:1px solid #e5e7eb;
+                font-size:12px;color:#6b7280;">
+              Email này được gửi từ hệ thống hỗ trợ sinh viên.
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>
