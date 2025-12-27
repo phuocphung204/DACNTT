@@ -1,5 +1,6 @@
 import Account from "../models/Account.js";
 import Request from "../models/Request.js";
+import Department from "../models/Department.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../controllers/authController.js";
 import transporter from "../services/send_email_smtp.js";
@@ -31,6 +32,54 @@ export const getAccountByDepartmentId = async (req, res) => {
         ]);
 
         return {
+          ...account.toObject(),
+          total_requests_count: total,
+          assigned_requests_count: assignedCount,
+          inprogress_requests_count: inProgressCount
+        };
+      })
+    );
+    // SẮP XẾP TĂNG DẦN THEO TOTAL
+    result.sort(
+      (a, b) => a.total_requests_count - b.total_requests_count
+    )
+
+    res.json({ mc: 200, me: "Accounts retrieved successfully", dt: result });
+  } catch (error) {
+    res.status(500).json({ mc: 500, me: error.message });
+  }
+};
+
+export const getDepartmentAndAccountsWithLabels = async (req, res) => {
+  try {
+    const { label } = req.query;
+    const department = await Department.findOne({ "labels.label": label });
+    if (!department) {
+      return res.status(404).json({ mc: 404, me: "Department not found" });
+    }
+    const accounts = await Account.find({ department_id: department._id, role: "Officer", work_status: "Active", active: true }).select("-password -department_id -role -work_status -active -updated_at -created_at -__v");
+    const result = await Promise.all(
+      accounts.map(async (account) => {
+        const [total, assignedCount, inProgressCount] = await Promise.all([
+          Request.countDocuments({
+            department_id: department._id,
+            assigned_to: account._id,
+            status: { $in: ["Assigned", "InProgress"] }
+          }),
+          Request.countDocuments({
+            department_id: department._id,
+            assigned_to: account._id,
+            status: "Assigned"
+          }),
+          Request.countDocuments({
+            department_id: department._id,
+            assigned_to: account._id,
+            status: "InProgress"
+          })
+        ]);
+
+        return {
+          department: department,
           ...account.toObject(),
           total_requests_count: total,
           assigned_requests_count: assignedCount,

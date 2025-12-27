@@ -1,7 +1,8 @@
 import express from "express";
 
-import { protect, admin, staff_or_admin } from "../middlewares/auth.js";
-import { createDepartment, getAllDepartments, getDepartmentById, updateDepartment, deleteDepartment } from "../controllers/departmentController.js";
+import { protect, admin, staff_or_admin, officer } from "../middlewares/auth.js";
+import { createDepartment, getAllDepartments, getDepartmentById, updateDepartment, deleteDepartment , 
+    createKnowledgeBase, updateKnowledgeBase, deleteKnowledgeBase } from "../controllers/departmentController.js";
 
 const router = express.Router();
 
@@ -34,4 +35,20 @@ router.put("/:department_id", protect, admin, updateDepartment);
 // @access  Private/Admin
 router.delete("/:department_id", protect, admin, deleteDepartment);
 
+// TODO: Test
+// Only Officer
+// @desc    Create a knowledge base entry under a label in a department
+// @route   POST /api/departments/:department_id/label/:label_id/knowledge_base
+// @access  Private/Officer
+router.post("/:department_id/label/:label_id/knowledge_base", protect, officer, createKnowledgeBase);
+
+// @desc    Update a knowledge base entry under a label in a department
+// @route   PUT /api/departments/:department_id/label/:label_id/knowledge_base/:knowledge_base_id
+// @access  Private/Officer
+router.put("/:department_id/label/:label_id/knowledge_base/:knowledge_base_id", protect, officer, updateKnowledgeBase);
+
+// @desc    Delete a knowledge base entry under a label in a department
+// @route   DELETE /api/departments/:department_id/label/:label_id/knowledge_base/:knowledge_base_id
+// @access  Private/Officer
+router.delete("/:department_id/label/:label_id/knowledge_base/:knowledge_base_id", protect, officer, deleteKnowledgeBase);
 export default router;

@@ -2,10 +2,19 @@ import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
 
+const knowledge_baseSchema = new Schema(
+    {
+        title: { type: String, required: true },
+        content: { type: String, required: true }
+    },
+    { _id: true }
+);
+
 const labelSchema = new Schema(
     {
         label_id: { type: Number, required: true, unique: true },
-        label: { type: String, required: true, unique: true }
+        label: { type: String, required: true, unique: true },
+        knowledge_base: [knowledge_baseSchema]
     },
     { _id: false }
 );
