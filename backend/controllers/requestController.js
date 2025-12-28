@@ -241,7 +241,7 @@ export const usePredictionByRequestId = async (req, res) => {
             status: "Assigned",
             $push: { history: { status: "Assigned", changed_by: req.account._id } }
         }, { new: true });
-        
+
         if (!request) {
             return res.status(404).json({ ec: 404, em: "Request not found" });
         }
@@ -250,7 +250,7 @@ export const usePredictionByRequestId = async (req, res) => {
         request.department_id = request.prediction.department_id;
         request.prediction.is_used = true;
         request.assigned_to = assigned_to;
-        
+
         switch (request.prediction.priority.label) {
             case "Medium":
                 request.priority = 1;
@@ -265,7 +265,7 @@ export const usePredictionByRequestId = async (req, res) => {
                 request.priority = 0;
         }
         await request.save();
-        
+
         res.status(200).json({ ec: 200, em: "Prediction marked as used", dt: request });
     } catch (error) {
         res.status(500).json({ ec: 500, em: error.message });
@@ -363,5 +363,40 @@ export const getMyAssignedRequests = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ ec: 500, em: error.message });
+    }
+};
+
+export const searchKnowledgeBase = async (req, res) => {
+    try {
+        const { label, q } = req.query;
+        const department_id = req.account.department_id;
+
+        const department = await Department.findById(department_id);
+
+        if (!department) {
+            return res.status(404).json({ ec: 404, me: "Department not found" });
+        }
+
+        const labelObj = department.labels.find(l => l.label.toLowerCase() === label.toLowerCase());
+
+        if (!labelObj) {
+            return res.status(404).json({ ec: 404, me: "Label not found in department" });
+        }
+
+        let knowledgeBases = labelObj.knowledge_base;
+        if (q) {
+            knowledgeBases = labelObj.knowledge_base.filter(kb =>
+                kb.title.toLowerCase().includes(q.toLowerCase())
+            );
+        }
+
+        res.status(200).json({
+            ec: 200,
+            me: "Knowledge bases fetched successfully",
+            dt: knowledgeBases
+        });
+
+    } catch (error) {
+        res.status(500).json({ ec: 500, me: error.message });
     }
 };

@@ -35,7 +35,7 @@ router.put("/:department_id", protect, admin, updateDepartment);
 // @access  Private/Admin
 router.delete("/:department_id", protect, admin, deleteDepartment);
 
-// TODO: Test
+// TODO: Thêm các route quản lý knowledge base dưới nhãn của phòng ban
 // Only Officer
 // @desc    Create a knowledge base entry under a label in a department
 // @route   POST /api/departments/:department_id/label/:label_id/knowledge_base
@@ -51,4 +51,5 @@ router.put("/:department_id/label/:label_id/knowledge_base/:knowledge_base_id", 
 // @route   DELETE /api/departments/:department_id/label/:label_id/knowledge_base/:knowledge_base_id
 // @access  Private/Officer
 router.delete("/:department_id/label/:label_id/knowledge_base/:knowledge_base_id", protect, officer, deleteKnowledgeBase);
+
 export default router;
