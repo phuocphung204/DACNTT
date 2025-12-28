@@ -59,7 +59,7 @@ const filterSlice = createSlice({
     },
     resetFilterValue(state, action) {
       const { param } = action.payload;
-      state.filterValues[param] = CLIENT_FILTERS[param].defaultValue || [];
+      state.filterValues[param] = CLIENT_FILTERS[param]?.defaultValue || [];
     }
   },
 });

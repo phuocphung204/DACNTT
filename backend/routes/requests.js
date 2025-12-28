@@ -1,6 +1,6 @@
 import express from "express";
 
-import { createRequest, getAllRequests, usePredictionByRequestId, assignRequestToOfficer, getRequestById, uploadAttachments, downloadAttachment, getMyAssignedRequests, getMyAssignedRequestsForManage } from "../controllers/requestController.js";
+import { createRequest, getAllRequests, usePredictionByRequestId, assignRequestToOfficer, getRequestById, uploadAttachments, downloadAttachment, getMyAssignedRequests, searchKnowledgeBase } from "../controllers/requestController.js";
 import { readUnreadEmails } from "../services/email_ggapi.js";
 import { protect, staff, upload, staff_or_officer, officer } from "../middlewares/auth.js";
 
@@ -71,6 +71,8 @@ router.get("/:request_id/attachments/:attachment_id", protect, officer, download
 // Đã chuyển lên trên
 // router.get("/my-assigned-requests", protect, officer, getMyAssignedRequests);
 
-// TODO: thêm các hàm truy vấn thông tin sinh viên đã gửi yêu cầu
-
+// TODO: Thêm thanh Search knowledge base search trực tiếp trong chi tiết request
+// @route   GET /api/requests/knowledge-base/search?label=<query>&q=<query>
+// @access   Private/Officer
+router.get("/knowledge-base/search", protect, officer, searchKnowledgeBase);
 export default router;

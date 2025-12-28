@@ -2,7 +2,7 @@ import express from "express";
 
 import { protect, upload, admin, staff_or_admin, staff_or_officer } from "../middlewares/auth.js";
 import {
-        getAllAccounts, getAccountByDepartmentId, updateMyPassword, getAccountById,
+        getAllAccounts, getAccountByDepartmentId, getDepartmentAndAccountsWithLabels, updateMyPassword, getAccountById,
         getMyProfile, updateMyProfile, createAccount, updateAccount, uploadAvatar
 } from "../controllers/accountController.js";
 
@@ -37,6 +37,11 @@ router.put("/me", protect, staff_or_officer, updateMyProfile);
 // @route   GET /api/accounts/department/:department_id
 // @access  Public/System
 router.get("/department/:department_id", getAccountByDepartmentId);
+
+// @desc    Get department and accounts with specific label
+// @route   GET /api/accounts/department_labels/:label
+// @access  Public/System
+router.get("/department_labels/:label", getDepartmentAndAccountsWithLabels); // TODO: update lên cho hay
 
 // STAFF/ADMIN ONLY
 

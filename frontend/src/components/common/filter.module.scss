@@ -47,7 +47,7 @@ $yellow-color: #ffc107;
   text-align: center;
 }
 
-.btnApplyFilters {
+.btnResetFilters {
   cursor: pointer;
   margin-left: auto;
   color: #6c757d;
@@ -56,4 +56,26 @@ $yellow-color: #ffc107;
   &:hover {
     color: $yellow-color;
   }
+}
+
+.btnApplyFilters {
+  cursor: pointer;
+  color: #6c757d;
+  margin-left: 5px;
+  transition: color 0.2s ease-in-out;
+
+  &:hover {
+    color: $yellow-color;
+  }
+}
+
+.activeFiltersRow {
+  color: #6c757d;
+}
+
+.activeFilterBadge {
+  border: 1px solid #dee2e6;
+  padding: 4px 8px;
+  background: #f8f9fa;
+  color: #343a40;
 }

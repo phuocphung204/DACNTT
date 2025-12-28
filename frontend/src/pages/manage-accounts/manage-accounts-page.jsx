@@ -358,19 +358,19 @@ const AccountTable = ({ data, onViewDetail, onEdit }) => {
             <Button
               size="sm"
               variant="outline-secondary"
+              title="Chi tiết"
               onClick={() => onViewDetail?.(row.original)}
             >
-              <BsEye className="me-1" />
-              Xem
+              <BsEye />
             </Button>
             <RoleGuard allowRoles={[ACCOUNT_ROLES_ENUM.ADMIN]}>
               <Button
                 size="sm"
                 variant="outline-primary"
+                title="Chỉnh sửa"
                 onClick={() => onEdit?.(row.original)}
               >
-                <BsPencil className="me-1" />
-                Sửa
+                <BsPencil />
               </Button>
             </RoleGuard>
           </div>
