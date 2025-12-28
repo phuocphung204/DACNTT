@@ -36,20 +36,6 @@ export const requestService = backendApi.injectEndpoints({
       }),
     }),
 
-    // TODO: cần chuyển getDepartments và getOfficersByDepartment nơi khác
-    getDepartments: build.query({
-      query: () => ({
-        url: "/departments",
-        method: "GET",
-      }),
-    }),
-    getOfficersByDepartment: build.query({
-      query: (departmentId) => ({
-        url: `/accounts/department/${departmentId}`,
-        method: "GET",
-      }),
-    }),
-
     sendReminder: build.mutation({
       query: ({ requestId, subject, studentEmail }) => ({
         url: `/requests/${requestId}/remind`,
@@ -136,8 +122,6 @@ export const {
   useGetRequestByIdQuery,
   useApplyPredictionByRequestIdMutation,
   useAssignRequestToOfficerMutation,
-  useGetDepartmentsQuery,
-  useGetOfficersByDepartmentQuery,
   useSendReminderMutation,
   useDownloadAttachmentMutation,
   useGetConversationQuery,

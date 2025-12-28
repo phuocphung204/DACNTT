@@ -10,6 +10,7 @@ const historySchema = new Schema(
 	},
 	{ _id: false }
 );
+
 const predictSchema = new Schema(
 	{
 		category: {

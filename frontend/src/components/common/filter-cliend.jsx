@@ -19,6 +19,7 @@ const FilterClient = ({
   const activeFilters = useSelector(state => state.filter.activeFilters);
   const filterValues = useSelector(state => state.filter.filterValues);
   const filterChilds = useSelector(state => state.filter.filterChilds);
+  const [activeReset, setActiveReset] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState([]);
 
   // Handle Functions
@@ -78,9 +79,15 @@ const FilterClient = ({
         displayValues,
       });
     });
-    console.log("Preview filters:", collected);
+
+    if (activeReset) {
+      console.log("Reset applied filters");
+      setActiveReset(false);
+      setAppliedFilters(collected);
+    }
+
     return collected;
-  }, [filterValues, selectedFilterOptions]);
+  }, [filterValues, selectedFilterOptions, activeReset]);
 
   const handleApplyFilters = () => {
     const returnedFilterValues = {};
@@ -114,9 +121,8 @@ const FilterClient = ({
         });
       }
     });
-    console.log(filterValues, previewFilters);
-    setAppliedFilters(previewFilters);
-    onSubmit?.({});
+    setActiveReset(true);
+    // handleApplyFilters();
   }
 
   // Render Functions
@@ -297,7 +303,7 @@ const FilterClient = ({
         />
       </section>
 
-      <div className={`${styles.parentFontSizeContainer} ${styles.activeFiltersRow} mt-2 d-flex align-items-center flex-wrap gap-2`}>
+      <div className={`${styles.parentFontSizeContainer} ${styles.activeFiltersRow} mt-2 d-flex align-items-center flex-wrap gap-2 w-100`}>
         <span className="text-muted fw-semibold">Đang lọc theo:</span>
         {appliedFilters.length === 0 ? (
           <span className="text-muted">Không có bộ lọc</span>

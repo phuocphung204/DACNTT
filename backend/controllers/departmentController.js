@@ -1,5 +1,16 @@
 import Department from "../models/Department.js";
 
+// System
+export const getAllLabels = async (req, res) => {
+  try {
+    const departments = await Department.find({}, { labels: 1 });
+    const allLabels = departments.flatMap(dept => dept.labels);
+    res.status(200).json({ ec: 200, em: "Labels fetched successfully", dt: allLabels });
+  } catch (error) {
+    res.status(500).json({ ec: 500, em: error.message });
+  }
+};
+
 // Admin and Staff only
 
 export const getAllDepartments = async (req, res) => {

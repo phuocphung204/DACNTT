@@ -16,7 +16,7 @@ import {
   useGetAccountsQuery,
   useUpdateAccountMutation,
 } from "#services/account-services";
-import { useGetDepartmentsQuery } from "#services/request-services";
+import { useGetDepartmentsQuery } from "#services/department-services";
 import { createAccountSchema, updateAccountSchema } from "#schemas";
 import { formatDate, parsePageSize, parsePageParam } from "#utils";
 import Filter from "#components/common/filter";

@@ -32,10 +32,10 @@ export const CLIENT_FILTERS = {
     multiselect: true,
     defaultValue: null,
     values: [
-      { label: "Thấp", value: "1" },
-      { label: "Trung bình", value: "2" },
-      { label: "Cao", value: "3" },
-      { label: "Rất cao", value: "4" },
+      { label: "Thấp", value: "0" },
+      { label: "Trung bình", value: "1" },
+      { label: "Cao", value: "2" },
+      { label: "Rất cao", value: "3" },
     ],
   },
   [STATUS]: {

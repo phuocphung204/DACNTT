@@ -1,10 +1,16 @@
 import express from "express";
 
 import { protect, admin, staff_or_admin, officer } from "../middlewares/auth.js";
-import { createDepartment, getAllDepartments, getDepartmentById, updateDepartment, deleteDepartment , 
-    createKnowledgeBase, updateKnowledgeBase, deleteKnowledgeBase } from "../controllers/departmentController.js";
+import {
+    createDepartment, getAllDepartments, getDepartmentById, updateDepartment, deleteDepartment,
+    createKnowledgeBase, updateKnowledgeBase, deleteKnowledgeBase,
+    getAllLabels
+} from "../controllers/departmentController.js";
 
 const router = express.Router();
+
+// System
+router.get("/labels", protect, getAllLabels);
 
 // Only Admin and Staff
 

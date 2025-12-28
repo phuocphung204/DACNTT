@@ -1,6 +1,6 @@
 import express from "express";
 
-import { createRequest, getAllRequests, usePredictionByRequestId, assignRequestToOfficer, getRequestById, uploadAttachments, downloadAttachment, getMyAssignedRequests, searchKnowledgeBase } from "../controllers/requestController.js";
+import { createRequest, getAllRequests, usePredictionByRequestId, assignRequestToOfficer, getRequestById, uploadAttachments, downloadAttachment, getMyAssignedRequests, searchKnowledgeBase, getMyAssignedRequestsForManage } from "../controllers/requestController.js";
 import { readUnreadEmails } from "../services/email_ggapi.js";
 import { protect, staff, upload, staff_or_officer, officer } from "../middlewares/auth.js";
 
