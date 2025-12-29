@@ -1,6 +1,7 @@
 import Request from "../models/Request.js";
 import Department from "../models/Department.js";
 import Account from "../models/Account.js";
+import mongoose from "mongoose";
 
 // Lọc theo thời gian
 const buildTimeFilter = ({ annual, quarterly, monthly, weekly, startDate, endDate }) => {
@@ -79,7 +80,6 @@ function getTimelineGrouping({ annual, quarterly, monthly, weekly, startDate, en
   };
 }
 
-
 // Skeleton timeline
 function buildTimelineSkeleton(
   { annual, quarterly, monthly, weekly, startDate, endDate },
@@ -155,7 +155,6 @@ function buildTimelineSkeleton(
 }
 
 // Controller
-// TODO: check
 export const getDashboardAdvanced = async (req, res) => {
   try {
     const { annual, quarterly, monthly, weekly, start, end } = req.query;
@@ -271,6 +270,177 @@ export const getDashboardAdvanced = async (req, res) => {
       }
     });
 
+  } catch (error) {
+    res.status(500).json({ ec: 500, me: error.message });
+  }
+};
+
+export const getDashboardWithDepartmentID = async (req, res) => {
+  try {
+    const { department_id } = req.params;
+    const { annual, quarterly, monthly, weekly, start, end } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(department_id)) {
+      return res.status(400).json({ ec: 400, me: "Invalid department_id" });
+    }
+
+    const departmentObjectId = new mongoose.Types.ObjectId(department_id);
+
+    const department = await Department.findById(departmentObjectId).select("_id");
+    if (!department) {
+      return res.status(404).json({ ec: 404, me: "Department not found" });
+    }
+
+    const startDate = start ? new Date(start) : null;
+    const endDate = end ? new Date(end) : null;
+
+    const timeQuery = buildTimeFilter({
+      annual,
+      quarterly,
+      monthly,
+      weekly,
+      startDate,
+      endDate
+    });
+
+    const timelineGroup = getTimelineGrouping({
+      annual,
+      quarterly,
+      monthly,
+      weekly,
+      startDate,
+      endDate
+    });
+
+    const stats = await Request.aggregate([
+      { $match: { ...timeQuery, department_id: departmentObjectId } },
+      {
+        $facet: {
+          total_requests: [{ $count: "count" }],
+
+          total_overdue_requests: [
+            { $match: { is_overdue: true } },
+            { $count: "count" }
+          ],
+
+          overdue_by_assignee: [
+            { $match: { is_overdue: true, assigned_to: { $ne: null } } },
+            { $group: { _id: "$assigned_to", count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            {
+              $lookup: {
+                from: "accounts",
+                localField: "_id",
+                foreignField: "_id",
+                as: "account"
+              }
+            },
+            { $unwind: { path: "$account", preserveNullAndEmptyArrays: true } },
+            {
+              $project: {
+                _id: 0,
+                account_id: "$_id",
+                count: 1,
+                name: "$account.name",
+                email: "$account.email",
+                position: "$account.position",
+                role: "$account.role"
+              }
+            }
+          ],
+
+          total_prediction_used: [
+            { $match: { "prediction.is_used": true } },
+            { $count: "count" }
+          ],
+
+          by_status: [
+            { $group: { _id: "$status", count: { $sum: 1 } } },
+            { $project: { _id: 0, status: "$_id", count: 1 } }
+          ],
+
+          by_label: [
+            { $match: { label: { $ne: null } } },
+            { $group: { _id: "$label", count: { $sum: 1 } } },
+            { $project: { _id: 0, label: "$_id", count: 1 } }
+          ],
+
+          timeline_label: [
+            { $match: { label: { $ne: null } } },
+            {
+              $group: {
+                _id: {
+                  ...timelineGroup._id,
+                  label: "$label"
+                },
+                count: { $sum: 1 }
+              }
+            },
+            {
+              $group: {
+                _id: timelineGroup._id,
+                labels: {
+                  $push: { k: "$_id.label", v: "$count" }
+                },
+                total: { $sum: "$count" }
+              }
+            },
+            {
+              $project: {
+                _id: 0,
+                ...Object.keys(timelineGroup._id).reduce((acc, k) => {
+                  acc[k] = `$_id.${k}`;
+                  return acc;
+                }, {}),
+                labels: { $arrayToObject: "$labels" },
+                total: 1
+              }
+            },
+            { $sort: timelineGroup.sort }
+          ]
+        }
+      }
+    ]);
+
+    const result = stats[0] || {};
+
+    const year = Number(annual) || (startDate ? startDate.getFullYear() : new Date().getFullYear());
+    const month = Number(monthly) || (startDate ? startDate.getMonth() + 1 : null);
+    const week = weekly ? Number(weekly) : null;
+
+    const allLabels = (result.by_label || []).map(x => x.label).filter(Boolean);
+    const zeroLabels = allLabels.reduce((acc, label) => {
+      acc[label] = 0;
+      return acc;
+    }, {});
+
+    const timelineLabelRaw = Array.isArray(result.timeline_label) ? result.timeline_label : [];
+    const timeline_label = buildTimelineSkeleton(
+      { annual, quarterly, monthly, weekly, startDate, endDate },
+      timelineLabelRaw,
+      year,
+      month,
+      week,
+      (key, value) => ({ [key]: value, labels: { ...zeroLabels }, total: 0 })
+    ).map(item => ({
+      ...item,
+      labels: { ...zeroLabels, ...(item.labels || {}) },
+      total: typeof item.total === "number" ? item.total : 0
+    }));
+
+    return res.json({
+      ec: 200,
+      me: "Lấy dashboard theo phòng ban thành công",
+      dt: {
+        total_requests: result.total_requests?.[0]?.count || 0,
+        total_overdue_requests: result.total_overdue_requests?.[0]?.count || 0,
+        overdue_by_assignee: result.overdue_by_assignee || [],
+        total_prediction_used: result.total_prediction_used?.[0]?.count || 0,
+        by_status: result.by_status || [],
+        by_label: result.by_label || [],
+        timeline_label
+      }
+    });
   } catch (error) {
     res.status(500).json({ ec: 500, me: error.message });
   }
