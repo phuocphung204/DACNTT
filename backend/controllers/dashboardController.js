@@ -55,50 +55,99 @@ const buildTimeFilter = ({ annual, quarterly, monthly, weekly, startDate, endDat
 
 // Nhóm timeline
 function getTimelineGrouping({ annual, quarterly, monthly, weekly, startDate, endDate }) {
-  if ((weekly && monthly) || (startDate && endDate)) return { _id: { day: { $dayOfMonth: "$created_at" } }, sort: { day: 1 } };
-  if (monthly) return { _id: { week: { $ceil: { $divide: [{ $dayOfMonth: "$created_at" }, 7] } } }, sort: { week: 1 } };
-  if (quarterly || annual) return { _id: { month: { $month: "$created_at" } }, sort: { month: 1 } };
-  return { _id: { month: { $month: "$created_at" } }, sort: { month: 1 } };
+  if ((weekly && monthly) || (startDate && endDate)) {
+    return {
+      _id: { day: { $dayOfMonth: "$created_at" } },
+      sort: { "day": 1 }
+    };
+  }
+
+  if (monthly) {
+    return {
+      _id: {
+        week: {
+          $ceil: { $divide: [{ $dayOfMonth: "$created_at" }, 7] }
+        }
+      },
+      sort: { "week": 1 }
+    };
+  }
+
+  return {
+    _id: { month: { $month: "$created_at" } },
+    sort: { "month": 1 }
+  };
 }
 
+
 // Skeleton timeline
-function buildTimelineSkeleton({ annual, quarterly, monthly, weekly, startDate, endDate }, timelineRaw, year, month, week) {
-  let timeline = [];
+function buildTimelineSkeleton(
+  { annual, quarterly, monthly, weekly, startDate, endDate },
+  timelineRaw,
+  year,
+  month,
+  week,
+  buildDefaultItem
+) {
+  const timeline = [];
+  const makeDefault =
+    typeof buildDefaultItem === "function"
+      ? buildDefaultItem
+      : (key, value) => ({
+          [key]: value,
+          total_revenue: 0,
+          total_profit: 0,
+          total_products_sold: 0
+        });
+
+  const resolvedYear = Number(year) || Number(annual) || (startDate ? new Date(startDate).getFullYear() : new Date().getFullYear());
+  const resolvedMonth = Number(month) || Number(monthly) || (startDate ? new Date(startDate).getMonth() + 1 : null);
+  const resolvedWeek = Number(week) || (weekly ? Number(weekly) : null);
 
   if (weekly && monthly) {
-    const startOfMonth = new Date(year, month - 1, 1);
+    const startOfMonth = new Date(resolvedYear, resolvedMonth - 1, 1);
     const startOfWeek = new Date(startOfMonth);
-    startOfWeek.setDate(1 + (week - 1) * 7);
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 7);
-    const lastDay = endOfWeek < new Date(year, month, 1) ? endOfWeek.getDate() : new Date(year, month, 0).getDate();
+    startOfWeek.setDate(1 + (resolvedWeek - 1) * 7);
 
-    for (let d = startOfWeek.getDate(); d < lastDay; d++) {
-      const item = timelineRaw.find(t => t.day === d);
-      timeline.push(item || { day: d, total_revenue: 0, total_profit: 0, total_products_sold: 0 });
+    const endOfWeekExclusive = new Date(startOfWeek);
+    endOfWeekExclusive.setDate(startOfWeek.getDate() + 7);
+
+    const endOfMonthExclusive = new Date(resolvedYear, resolvedMonth, 1);
+    const endExclusive = endOfWeekExclusive < endOfMonthExclusive ? endOfWeekExclusive : endOfMonthExclusive;
+
+    for (let d = new Date(startOfWeek); d < endExclusive; d.setDate(d.getDate() + 1)) {
+      const day = d.getDate();
+      const item = timelineRaw.find(t => t.day === day);
+      timeline.push(item || makeDefault("day", day));
     }
   } else if (monthly) {
-    for (let w = 1; w <= 4; w++) {
+    const daysInMonth = new Date(resolvedYear, resolvedMonth, 0).getDate();
+    const maxWeek = Math.ceil(daysInMonth / 7);
+    for (let w = 1; w <= maxWeek; w++) {
       const item = timelineRaw.find(t => t.week === w);
-      timeline.push(item || { week: w, total_revenue: 0, total_profit: 0, total_products_sold: 0 });
+      timeline.push(item || makeDefault("week", w));
     }
   } else if (quarterly) {
     const startMonth = (Number(quarterly) - 1) * 3 + 1;
     for (let m = startMonth; m < startMonth + 3; m++) {
       const item = timelineRaw.find(t => t.month === m);
-      timeline.push(item || { month: m, total_revenue: 0, total_profit: 0, total_products_sold: 0 });
+      timeline.push(item || makeDefault("month", m));
     }
   } else if (annual) {
     for (let m = 1; m <= 12; m++) {
       const item = timelineRaw.find(t => t.month === m);
-      timeline.push(item || { month: m, total_revenue: 0, total_profit: 0, total_products_sold: 0 });
+      timeline.push(item || makeDefault("month", m));
     }
   } else if (startDate && endDate) {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    for (let d = start.getDate(); d <= end.getDate(); d++) {
-      const item = timelineRaw.find(t => t.day === d);
-      timeline.push(item || { day: d, total_revenue: 0, total_profit: 0, total_products_sold: 0 });
+    const endInclusive = new Date(end);
+    endInclusive.setHours(23, 59, 59, 999);
+
+    for (let d = new Date(start); d <= endInclusive; d.setDate(d.getDate() + 1)) {
+      const day = d.getDate();
+      const item = timelineRaw.find(t => t.day === day);
+      timeline.push(item || makeDefault("day", day));
     }
   }
 
@@ -133,51 +182,22 @@ export const getDashboardAdvanced = async (req, res) => {
     });
 
     const stats = await Request.aggregate([
-      { $match: { ...timeQuery } },
+      { $match: { ...timeQuery, label: { $ne: null } } },
 
       {
         $facet: {
+          total_requests: [{ $count: "count" }],
 
-          // 1. Tổng số request
-          total_requests: [
-            { $count: "count" }
-          ],
-
-          // 2. Request theo STATUS
           by_status: [
-            {
-              $group: {
-                _id: "$status",
-                count: { $sum: 1 }
-              }
-            },
-            {
-              $project: {
-                _id: 0,
-                status: "$_id",
-                count: 1
-              }
-            }
+            { $group: { _id: "$status", count: { $sum: 1 } } },
+            { $project: { _id: 0, status: "$_id", count: 1 } }
           ],
 
-          //  3. Request theo LABEL
           by_label: [
-            {
-              $group: {
-                _id: "$label",
-                count: { $sum: 1 }
-              }
-            },
-            {
-              $project: {
-                _id: 0,
-                label: "$_id",
-                count: 1
-              }
-            }
+            { $group: { _id: "$label", count: { $sum: 1 } } },
+            { $project: { _id: 0, label: "$_id", count: 1 } }
           ],
 
-          //  4. Timeline + label
           timeline_label: [
             {
               $group: {
@@ -189,13 +209,23 @@ export const getDashboardAdvanced = async (req, res) => {
               }
             },
             {
+              $group: {
+                _id: timelineGroup._id,
+                labels: {
+                  $push: { k: "$_id.label", v: "$count" }
+                },
+                total: { $sum: "$count" }
+              }
+            },
+            {
               $project: {
                 _id: 0,
-                label: "$_id.label",
-                month: "$_id.month",
-                week: "$_id.week",
-                day: "$_id.day",
-                count: 1
+                ...Object.keys(timelineGroup._id).reduce((acc, k) => {
+                  acc[k] = `$_id.${k}`;
+                  return acc;
+                }, {}),
+                labels: { $arrayToObject: "$labels" },
+                total: 1
               }
             },
             { $sort: timelineGroup.sort }
@@ -206,6 +236,30 @@ export const getDashboardAdvanced = async (req, res) => {
 
     const result = stats[0];
 
+    const year = Number(annual) || (startDate ? startDate.getFullYear() : new Date().getFullYear());
+    const month = Number(monthly) || (startDate ? startDate.getMonth() + 1 : null);
+    const week = weekly ? Number(weekly) : null;
+
+    const allLabels = (result.by_label || []).map(x => x.label).filter(Boolean);
+    const zeroLabels = allLabels.reduce((acc, label) => {
+      acc[label] = 0;
+      return acc;
+    }, {});
+
+    const timelineLabelRaw = Array.isArray(result.timeline_label) ? result.timeline_label : [];
+    const timeline_label = buildTimelineSkeleton(
+      { annual, quarterly, monthly, weekly, startDate, endDate },
+      timelineLabelRaw,
+      year,
+      month,
+      week,
+      (key, value) => ({ [key]: value, labels: { ...zeroLabels }, total: 0 })
+    ).map(item => ({
+      ...item,
+      labels: { ...zeroLabels, ...(item.labels || {}) },
+      total: typeof item.total === "number" ? item.total : 0
+    }));
+
     res.json({
       ec: 200,
       me: "Lấy dashboard nâng cao thành công",
@@ -213,14 +267,11 @@ export const getDashboardAdvanced = async (req, res) => {
         total_requests: result.total_requests[0]?.count || 0,
         by_status: result.by_status,
         by_label: result.by_label,
-        timeline_label: result.timeline_label
+        timeline_label
       }
     });
 
   } catch (error) {
-    res.status(500).json({
-      ec: 500,
-      me: error.message
-    });
+    res.status(500).json({ ec: 500, me: error.message });
   }
 };

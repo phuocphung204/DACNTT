@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
+import cron from "node-cron";
+import axios from "axios";
 
 // Load environment variables
 dotenv.config();
@@ -16,7 +18,6 @@ import requestRoutes from "./routes/requests.js";
 import dashboardRoutes from "./routes/dashboard.js";
 
 // Services
-import { initGmailWatcher } from "./services/email_ggapi.js";
 import { initModel } from "./services/finetune.js";
 
 // Middleware
@@ -71,6 +72,17 @@ app.get("/", (req, res) => {
   res.json({ message: "Ecommerce API is running!" });
 });
 
+// scheduler to find overdue requests every 3 hours
+cron.schedule("0 */3 * * *", async () => {
+// cron.schedule("*/30 * * * * *", async () => { // For testing every 30 seconds
+  try {
+    const res = await axios.post(`http://localhost:${process.env.PORT}/api/requests/assign-overdue`);
+    console.log("Overdue requests successfully assigned");
+  } catch (error) {
+    console.error("Error assigning overdue requests:", error.message);
+  }
+});
+
 // Connect to database and start server
 const PORT = process.env.PORT;
 
@@ -79,6 +91,7 @@ connectDB().then(() => {
     console.log(`Server running on port ${PORT}`);
     
     // Khởi động Model AI
-    await initModel();
+    if (process.env.NODE_ENV === "production")
+      await initModel();
   });
 });
