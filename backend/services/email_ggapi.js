@@ -4,6 +4,9 @@ import { simpleParser } from "mailparser";
 import axios from "axios";
 import FormData from "form-data";
 import dotenv from "dotenv";
+import Account, { ACCOUNT_ROLES, WORK_STATUS } from "../models/Account.js";
+import { createNotification, sendNotification } from "../controllers/notification-controller.js";
+import { NOTIFICATION_TYPES } from "../models/Notification.js";
 dotenv.config();
 
 export const oauth2Client = new google.auth.OAuth2(
@@ -43,6 +46,8 @@ export async function initGmailWatcher() {
 
 const processedMessageIds = new Set();
 
+let staffCache = null;
+
 export const readUnreadEmails = async (req, res) => {
   try {
     const results = [];
@@ -50,7 +55,7 @@ export const readUnreadEmails = async (req, res) => {
 
     const unreadMessages = await gmail.users.messages.list({
       userId: "me",
-      q: "is:unread from:(@gmail.com OR @student.tdtu.edu.vn)",
+      q: `is:unread from:(${process.env.FILTER_EMAIL_DOMAINS.split(",").join(" OR ")})`,
     });
 
     if (!unreadMessages.data.messages) return results;
@@ -103,6 +108,27 @@ export const readUnreadEmails = async (req, res) => {
             console.error("Failed to upload attachment", att.filename, err.message);
           }
         }
+      }
+
+      // Gửi thông báo đến tất cả staff
+      if (!staffCache) {
+        staffCache = await Account.find({ role: ACCOUNT_ROLES.STAFF, work_status: WORK_STATUS.ACTIVE, active: true });
+      }
+      if (staffCache.length > 0) {
+        staffCache.forEach(async (staff) => {
+          const notification = await createNotification({
+            sender: {
+              user_id: null,
+              name: "Hệ thống",
+            },
+            recipient_id: staff._id,
+            type: NOTIFICATION_TYPES.NEW_REQUEST,
+            entity_id: request_id,
+            data: { request_id, subject: parsed.subject, date: resquest.data.dt.created_at }
+          });
+          sendNotification(staff._id, notification);
+          console.log("Sent NEW_REQUEST notification to staff:", staff._id);
+        });
       }
 
       // Đánh dấu đã đọc

@@ -23,7 +23,7 @@ import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-tabl
 
 import { useGetMyAssignedRequestsQuery } from "#services/request-services";
 import { formatDateTime } from "#utils/format";
-import { PAGE_SIZE_OPTIONS, PRIORITY, REQUEST_PRIORITY, REQUEST_STATUS, TIME_RANGE } from "#components/_variables";
+import { PAGE_SIZE_OPTIONS, PRIORITY, REQUEST_PRIORITY_MODEL, REQUEST_STATUS, TIME_RANGE } from "#components/_variables";
 import FilterClient from "#components/common/filter-cliend";
 
 import styles from "./officer-requests-process-page.module.scss";
@@ -110,8 +110,8 @@ const RequestTable = ({ data, onPreview, onViewDetail }) => {
         header: "Ưu tiên",
         accessorKey: "priority",
         cell: (info) => (
-          <Badge bg={REQUEST_PRIORITY[info.getValue()]?.variant}>
-            {REQUEST_PRIORITY[info.getValue()]?.label}
+          <Badge bg={REQUEST_PRIORITY_MODEL[info.getValue()]?.variant}>
+            {REQUEST_PRIORITY_MODEL[info.getValue()]?.label}
           </Badge>
         ),
       },
@@ -476,10 +476,10 @@ const OfficerRequestsProcessPage = () => {
     ? REQUEST_STATUS[previewStatus]?.variant || "secondary"
     : "secondary";
   const previewPriorityLabel = previewRequest
-    ? REQUEST_PRIORITY[Number(previewRequest.priority)]?.label || "Trung bình"
+    ? REQUEST_PRIORITY_MODEL[Number(previewRequest.priority)]?.label || "Trung bình"
     : "";
   const previewPriorityVariant = previewRequest
-    ? REQUEST_PRIORITY[Number(previewRequest.priority)]?.variant || "secondary"
+    ? REQUEST_PRIORITY_MODEL[Number(previewRequest.priority)]?.variant || "secondary"
     : "secondary";
   const previewLabel =
     previewRequest?.label || previewRequest?.prediction?.label || "Chưa gán";

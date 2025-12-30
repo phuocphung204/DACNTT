@@ -15,6 +15,7 @@ import { getErrorMessage } from "../../components/staff-requests-process/helpers
 
 import styles from "./staff-requests-process-page.module.scss";
 import { removeVietnameseTones } from "#utils/normalize";
+import { useLocation } from "react-router-dom";
 
 const PRIORITY_SLA_HOURS = {
   0: 4,
@@ -52,11 +53,11 @@ const computeDueState = (status, dueAt, now) => {
   return "none";
 };
 
-const sortByCreatedAtDesc = (a, b) => {
-  const first = new Date(a?.created_at || a?.createdAt || 0).getTime();
-  const second = new Date(b?.created_at || b?.createdAt || 0).getTime();
-  return second - first;
-};
+// const sortByCreatedAtDesc = (a, b) => {
+//   const first = new Date(a?.created_at || a?.createdAt || 0).getTime();
+//   const second = new Date(b?.created_at || b?.createdAt || 0).getTime();
+//   return second - first;
+// };
 
 const StaffRequestsProcessPage = () => {
   const { push } = userModalDialogStore(
@@ -64,6 +65,8 @@ const StaffRequestsProcessPage = () => {
       push: state.push,
     }))
   );
+
+  // const { state: { qState = "", dateState = "", requestIdState = "" } = {} } = useLocation(); // Lấy state từ điều hướng
 
   // const [filterValues, setFilterValues] = useState({
   //   timeRange: ["today"],
@@ -163,10 +166,10 @@ const StaffRequestsProcessPage = () => {
       return list.filter((item) => clientFilterValues.status.includes(item.status));
     };
 
-    const pending = filterSearchText(filterStatus(filterPriority(applyDecorators(requestBuckets.pending, "Pending")))).sort(sortByCreatedAtDesc);
-    const assigned = filterSearchText(filterStatus(filterPriority(applyDecorators(requestBuckets.assigned, "Assigned")))).sort(sortByCreatedAtDesc);
-    const inProgress = filterSearchText(filterStatus(filterPriority(applyDecorators(requestBuckets.inProgress, "InProgress")))).sort(sortByCreatedAtDesc);
-    const resolved = filterSearchText(filterStatus(filterPriority(applyDecorators(requestBuckets.resolved, "Resolved")))).sort(sortByCreatedAtDesc);
+    const pending = filterSearchText(filterStatus(filterPriority(applyDecorators(requestBuckets.pending, "Pending"))));
+    const assigned = filterSearchText(filterStatus(filterPriority(applyDecorators(requestBuckets.assigned, "Assigned"))));
+    const inProgress = filterSearchText(filterStatus(filterPriority(applyDecorators(requestBuckets.inProgress, "InProgress"))));
+    const resolved = filterSearchText(filterStatus(filterPriority(applyDecorators(requestBuckets.resolved, "Resolved"))));
 
     return { pending, inProgress, resolved, assigned };
   }, [requestBuckets, clientFilterValues]);

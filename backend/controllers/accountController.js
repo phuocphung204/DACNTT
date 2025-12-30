@@ -16,6 +16,7 @@ export const getAccountByDepartmentId = async (req, res) => {
       work_status: "Active",
       active: true
     }).select("-password -department_id -role -work_status -active -updated_at -created_at -__v");
+    console.log("Accounts found:", accounts);
     const result = await Promise.all(
       accounts.map(async (account) => {
         const [total, assignedCount, inProgressCount] = await Promise.all([
@@ -57,7 +58,8 @@ export const getAccountByDepartmentId = async (req, res) => {
 
 export const getDepartmentAndAccountsWithLabels = async (req, res) => {
   try {
-    const { label } = req.query;
+    const { label } = req.params;
+    console.log("Label received:", label);
     const department = await Department.findOne({ "labels.label": label });
     if (!department) {
       return res.status(404).json({ mc: 404, me: "Department not found" });
@@ -84,7 +86,6 @@ export const getDepartmentAndAccountsWithLabels = async (req, res) => {
         ]);
 
         return {
-          department: department,
           ...account.toObject(),
           total_requests_count: total,
           assigned_requests_count: assignedCount,
@@ -97,9 +98,14 @@ export const getDepartmentAndAccountsWithLabels = async (req, res) => {
       (a, b) => a.total_requests_count - b.total_requests_count
     )
 
-    res.json({ mc: 200, me: "Accounts retrieved successfully", dt: result });
+    res.json({
+      ec: 200, em: "Accounts retrieved successfully", dt: {
+        accounts: result,
+        department: department
+      }
+    });
   } catch (error) {
-    res.status(500).json({ mc: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };
 

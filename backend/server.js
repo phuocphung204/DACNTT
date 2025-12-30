@@ -63,6 +63,7 @@ import dashboardRoutes from "./routes/dashboard.js";
 import notificationRoutes from "./routes/notifications.js";
 import { startListening } from "./services/gmail-chat.js";
 import { SOCKET_EVENTS } from "./_variables.js";
+import { initModel } from "./services/finetune.js";
 
 // Middleware
 app.use(express.json({ limit: "10mb" }));
@@ -129,7 +130,7 @@ connectDB().then(() => {
     // console.log(`Server running on port ${PORT}`);
 
     // Khởi động Model AI
-    // await initModel();
+    await initModel();
   });
 });
 

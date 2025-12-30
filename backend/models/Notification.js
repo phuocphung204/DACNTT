@@ -3,7 +3,8 @@ import { Schema, model } from "mongoose";
 export const NOTIFICATION_TYPES = Object.freeze({
   REQUEST_REPLY_STUDENT: "REQUEST_REPLY_STUDENT", // Thông báo trả lời request cho sinh viên
   REQUEST_ASSIGNED: "REQUEST_ASSIGNED",         // Thông báo được phân công request cho officer
-  CHAT_MESSAGE: "CHAT_MESSAGE"                  // Thông báo tin nhắn chat
+  CHAT_MESSAGE: "CHAT_MESSAGE", // Thông báo tin nhắn chat
+  NEW_REQUEST: "NEW_REQUEST" // Thông báo có request mới (Dành cho staff)
 });
 
 const SenderSchema = new Schema({
@@ -28,7 +29,7 @@ const NotificationSchema = new Schema({
   // 4. Loại và Trạng thái
   type: {
     type: String,
-    enum: ["REQUEST_REPLY_STUDENT", "REQUEST_ASSIGNED", "CHAT_MESSAGE"],
+    enum: ["REQUEST_REPLY_STUDENT", "REQUEST_ASSIGNED", "CHAT_MESSAGE", "NEW_REQUEST"],
     required: true
   },
   is_read: { type: Boolean, default: false },

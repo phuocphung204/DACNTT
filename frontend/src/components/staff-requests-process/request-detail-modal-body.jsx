@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Badge, Button, Card, Form, ListGroup, Spinner } from "react-bootstrap";
-import { BsCheckCircle, BsPersonPlus, BsXCircle } from "react-icons/bs";
+import { BsCheckCircle, BsPersonPlus } from "react-icons/bs";
 import { toast } from "react-toastify";
 
 import {
@@ -10,10 +10,11 @@ import {
   useGetRequestByIdQuery,
 } from "#services/request-services";
 import {
-  useGetDepartmentsQuery,
+  useGetAllLabelsQuery,
   useGetOfficersByDepartmentQuery,
 } from "#services/department-services";
-import { REQUEST_PRIORITY, REQUEST_STATUS } from "#components/_variables";
+import { useGetDepartmentAndAccountsWithLabelsQuery } from "#services/account-services";
+import { REQUEST_PRIORITY, REQUEST_PRIORITY_MODEL, REQUEST_STATUS } from "#components/_variables";
 import { formatDateTime } from "#utils/format";
 
 import { getErrorMessage, toAsciiLabel } from "./helpers";
@@ -40,7 +41,10 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
   const detail = detailResponse?.dt;
   const predictionDepartmentId = detail?.prediction?.department_id;
 
-  const { data: predictionOfficersResponse } = useGetOfficersByDepartmentQuery(
+  const {
+    data: predictionOfficersResponse,
+    refetch: refetchPredictionOfficers,
+  } = useGetOfficersByDepartmentQuery(
     predictionDepartmentId,
     { skip: !predictionDepartmentId }
   );
@@ -49,101 +53,77 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
     const list = Array.isArray(predictionOfficersResponse?.dt)
       ? predictionOfficersResponse.dt
       : [];
-    return [...list].sort(
-      (a, b) => (b.total_requests_count || 0) - (a.total_requests_count || 0)
-    );
+    return list;
   }, [predictionOfficersResponse]);
 
-  const leastLoadedPredictionOfficer = useMemo(() => {
-    if (predictionOfficers.length === 0) return null;
-    return [...predictionOfficers].sort(
-      (a, b) => (a.total_requests_count || 0) - (b.total_requests_count || 0)
-    )[0];
-  }, [predictionOfficers]);
-
-  const { data: departmentsResponse } = useGetDepartmentsQuery(undefined, {
+  const { data: allLabelsResponse } = useGetAllLabelsQuery(undefined, {
     skip: !showManual,
   });
 
-  const departments = useMemo(() => {
-    return Array.isArray(departmentsResponse?.dt)
-      ? departmentsResponse.dt
-      : [];
-  }, [departmentsResponse]);
-
   const manualLabels = useMemo(() => {
-    if (!manualForm.departmentId) return [];
-    const department = departments.find(
-      (item) => item._id === manualForm.departmentId
-    );
-    return Array.isArray(department?.labels) ? department.labels : [];
-  }, [departments, manualForm.departmentId]);
+    const list = Array.isArray(allLabelsResponse?.dt) ? allLabelsResponse.dt : [];
+    return list;
+  }, [allLabelsResponse]);
 
-  const { data: manualOfficersResponse } = useGetOfficersByDepartmentQuery(
-    manualForm.departmentId,
-    { skip: !manualForm.departmentId || !showManual }
+  const {
+    data: officersByLabelResponse,
+    refetch: refetchOfficersByLabel,
+  } = useGetDepartmentAndAccountsWithLabelsQuery(
+    manualForm.label,
+    { skip: !manualForm.label || !showManual }
   );
 
-  const manualOfficers = useMemo(() => {
-    const list = Array.isArray(manualOfficersResponse?.dt)
-      ? manualOfficersResponse.dt
+  const [manualOfficers, manualDepartment] = useMemo(() => {
+    const list = Array.isArray(officersByLabelResponse?.dt?.accounts)
+      ? officersByLabelResponse.dt.accounts
       : [];
-    return [...list].sort(
-      (a, b) => (b.total_requests_count || 0) - (a.total_requests_count || 0)
-    );
-  }, [manualOfficersResponse]);
+    const department = officersByLabelResponse?.dt?.department || null;
+    return [list, department];
+  }, [officersByLabelResponse]);
 
-  const leastLoadedManualOfficer = useMemo(() => {
-    if (manualOfficers.length === 0) return null;
-    return [...manualOfficers].sort(
-      (a, b) => (a.total_requests_count || 0) - (b.total_requests_count || 0)
-    )[0];
-  }, [manualOfficers]);
+  const derivedDepartmentId = manualDepartment?._id || "";
+  const derivedDepartmentName = manualDepartment?.name || "";
 
   useEffect(() => {
-    if (!selectedOfficer && leastLoadedPredictionOfficer?._id) {
-      setSelectedOfficer(leastLoadedPredictionOfficer._id);
+    if (!selectedOfficer && predictionOfficers?._id) {
+      setSelectedOfficer(predictionOfficers._id);
     }
-  }, [leastLoadedPredictionOfficer, selectedOfficer]);
+  }, [predictionOfficers, selectedOfficer]);
 
   useEffect(() => {
-    if (!manualForm.departmentId) return;
-    if (manualLabels.length === 0) {
+    if (!manualLabels || manualLabels.length === 0) {
       setManualForm((prev) => ({ ...prev, label: "" }));
       return;
     }
-    const isLabelValid = manualLabels.some(
-      (item) => item.label === manualForm.label
-    );
+    const isLabelValid = manualLabels.some((item) => item.label === manualForm.label);
     if (!isLabelValid) {
       setManualForm((prev) => ({
         ...prev,
         label: manualLabels[0].label,
+        officerId: "",
       }));
     }
-  }, [manualForm.departmentId, manualForm.label, manualLabels]);
+  }, [manualForm.label, manualLabels]);
 
   useEffect(() => {
-    if (!manualForm.departmentId) return;
+    if (derivedDepartmentId && derivedDepartmentId !== manualForm.departmentId) {
+      setManualForm((prev) => ({ ...prev, departmentId: derivedDepartmentId }));
+    }
+  }, [derivedDepartmentId, manualForm.departmentId]);
+
+  useEffect(() => {
     if (manualOfficers.length === 0) {
       setManualForm((prev) => ({ ...prev, officerId: "" }));
       return;
     }
-    const isOfficerValid = manualOfficers.some(
-      (item) => item._id === manualForm.officerId
-    );
+    const isOfficerValid = manualOfficers.some((item) => item._id === manualForm.officerId);
     if (!isOfficerValid) {
       setManualForm((prev) => ({
         ...prev,
-        officerId: leastLoadedManualOfficer?._id || "",
+        officerId: manualOfficers?._id || "",
       }));
     }
-  }, [
-    manualForm.departmentId,
-    manualForm.officerId,
-    manualOfficers,
-    leastLoadedManualOfficer,
-  ]);
+  }, [manualForm.officerId, manualOfficers]);
 
   const [_usePrediction, { isLoading: predictionLoading }] =
     useApplyPredictionByRequestIdMutation();
@@ -166,6 +146,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
       }
       toast.success("Đã phân công theo dự đoán");
       onAssigned?.();
+      refetchPredictionOfficers?.();
       refetch?.();
     } catch (err) {
       toast.error(getErrorMessage(err, "Không thể phân công tự động"));
@@ -192,6 +173,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
       }
       toast.success("Đã phân công thủ công");
       onAssigned?.();
+      refetchOfficersByLabel?.();
       refetch?.();
     } catch (err) {
       toast.error(getErrorMessage(err, "Không thể phân công thủ công"));
@@ -250,8 +232,9 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
   }
 
   const predictionLabel = detail?.prediction?.category?.label || detail?.label || "Chưa có";
-  const predictionScore = detail?.prediction?.category?.score;
-  const predictionPriorityLabel = detail?.prediction?.priority?.label;
+  const predictionLabelScore = detail?.prediction?.category?.score;
+  const predictionPriorityLabel = REQUEST_PRIORITY_MODEL[detail?.prediction?.priority?.label_id]?.label;
+  const predictionPriorityScore = detail?.prediction?.priority?.score;
   const hasPrediction = Boolean(predictionDepartmentId);
 
   return (
@@ -262,14 +245,19 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
             Hệ thống đề xuất
           </Badge>
           <span className="fw-semibold">
-            Nhãn: {toAsciiLabel(predictionLabel) || "Chưa có"}
+            Nhãn: {predictionLabel || "Chưa có"}
           </span>
-          <span className="text-muted">
-            Ưu tiên: {predictionPriorityLabel || REQUEST_PRIORITY[detail?.priority]?.label}
-          </span>
-          {predictionScore !== undefined && (
+          {predictionLabelScore !== undefined && (
             <span className="text-muted">
-              Độ tin cậy: {Number(predictionScore).toFixed(2)}
+              - Độ tin cậy: {(Number(predictionLabelScore) * 100).toFixed(0)}%
+            </span>
+          )}
+          <span className="fw-semibold">
+            Ưu tiên: {predictionPriorityLabel || "Chưa có"}
+          </span>
+          {predictionPriorityScore !== undefined && (
+            <span className="text-muted">
+              - Độ tin cậy: {(Number(predictionPriorityScore) * 100).toFixed(0)}%
             </span>
           )}
         </div>
@@ -279,6 +267,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
               Nhân viên phòng ban
             </Form.Label>
             <Form.Select
+              name="prediction-officer"
               size="sm"
               value={selectedOfficer}
               onChange={(event) => setSelectedOfficer(event.target.value)}
@@ -308,14 +297,6 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
             </Button>
             <Button
               size="sm"
-              variant="outline-danger"
-              onClick={() => setShowManual(true)}
-            >
-              <BsXCircle className="me-1" />
-              Từ chối dự đoán
-            </Button>
-            <Button
-              size="sm"
               variant="outline-primary"
               onClick={() => setShowManual((prev) => !prev)}
             >
@@ -331,28 +312,6 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
           <div className="fw-semibold mb-2">Phân công thủ công</div>
           <div className="row g-2">
             <div className="col-md-6">
-              <Form.Label className="small mb-1">Phòng ban</Form.Label>
-              <Form.Select
-                size="sm"
-                value={manualForm.departmentId}
-                onChange={(event) =>
-                  setManualForm((prev) => ({
-                    ...prev,
-                    departmentId: event.target.value,
-                    label: "",
-                    officerId: "",
-                  }))
-                }
-              >
-                <option value="">Chọn phòng ban</option>
-                {departments.map((dept) => (
-                  <option key={dept._id} value={dept._id}>
-                    {dept.name}
-                  </option>
-                ))}
-              </Form.Select>
-            </div>
-            <div className="col-md-6">
               <Form.Label className="small mb-1">Nhãn yêu cầu</Form.Label>
               <Form.Select
                 size="sm"
@@ -361,17 +320,27 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
                   setManualForm((prev) => ({
                     ...prev,
                     label: event.target.value,
+                    officerId: "",
                   }))
                 }
-                disabled={!manualForm.departmentId || manualLabels.length === 0}
+                disabled={manualLabels.length === 0}
               >
                 <option value="">Chọn nhãn yêu cầu</option>
                 {manualLabels.map((item) => (
-                  <option key={item.label_id} value={item.label}>
-                    {toAsciiLabel(item.label)}
+                  <option key={item.label_id || item.label} value={item.label}>
+                    {item.label}
                   </option>
                 ))}
               </Form.Select>
+            </div>
+            <div className="col-md-6">
+              <Form.Label className="small mb-1">Phòng ban (tự động)</Form.Label>
+              <Form.Control
+                size="sm"
+                value={derivedDepartmentName || "Chưa có"}
+                readOnly
+                disabled
+              />
             </div>
             <div className="col-md-6">
               <Form.Label className="small mb-1">Ưu tiên</Form.Label>
@@ -403,7 +372,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
                     officerId: event.target.value,
                   }))
                 }
-                disabled={!manualForm.departmentId}
+                disabled={!manualForm.label}
               >
                 <option value="">Chọn nhân viên</option>
                 {manualOfficers.map((officer) => (

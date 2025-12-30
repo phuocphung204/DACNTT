@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge, Button, ListGroup, OverlayTrigger, Popover, Spinner } from "react-bootstrap";
-import { BsBellFill, BsCheck2All, BsEnvelopeAt, BsFillTagFill } from "react-icons/bs";
+import {
+  BsBellFill,
+  BsCheck2All,
+  BsEnvelopeAt,
+  BsFillFileEarmarkPlusFill,
+  BsFillTagFill,
+} from "react-icons/bs";
 import { toast } from "react-toastify";
 
 import { useGetMyNotificationsQuery, useGetUnreadNotificationsCountQuery, useMarkAllNotificationsAsReadMutation, useMarkNotificationAsReadMutation } from "#services";
@@ -11,6 +17,7 @@ import { socket } from "services/axios-config";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
+import { no } from "zod/v4/locales";
 
 const MAX_DISPLAY = 10;
 
@@ -19,8 +26,16 @@ const Notifications = () => {
   const [showPopover, setShowPopover] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
-  const { data: unreadData, isSuccess: isUnreadSuccess, refetch: refetchUnread } = useGetUnreadNotificationsCountQuery(
-    { skip: !isAuthenticated }
+  const {
+    data: unreadData,
+    isSuccess: isUnreadSuccess,
+    refetch: refetchUnread
+  } = useGetUnreadNotificationsCountQuery(
+    undefined,
+    {
+      skip: !isAuthenticated,
+      refetchOnMountOrArgChange: 3,
+    },
   );
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -31,7 +46,10 @@ const Notifications = () => {
     refetch: refetchList,
   } = useGetMyNotificationsQuery(
     { limit: MAX_DISPLAY },
-    { skip: !isAuthenticated }
+    {
+      skip: !isAuthenticated,
+      refetchOnMountOrArgChange: 3,
+    },
   );
   const [notifications, setNotifications] = useState([]);
 
@@ -62,6 +80,8 @@ const Notifications = () => {
         return <BsFillTagFill className={styles.iconAssigned} />;
       case NOTIFICATION_TYPES.REQUEST_REPLY_STUDENT:
         return <BsEnvelopeAt className={styles.iconInfo} />;
+      case NOTIFICATION_TYPES.NEW_REQUEST:
+        return <BsFillFileEarmarkPlusFill className={styles.iconNewRequest} />;
       default:
         return <BsBellFill className="text-muted" />;
     }
@@ -98,6 +118,18 @@ const Notifications = () => {
       );
     }
 
+    if (notification.type === NOTIFICATION_TYPES.NEW_REQUEST) {
+      const subject = notification.data?.subject || "yêu cầu mới";
+      return (
+        <>
+          <div className="fw-semibold text-dark">Yêu cầu mới</div>
+          <div className="small text-muted">
+            Có yêu cầu mới từ sinh viên: <span className="fw-semibold text-dark">{subject}</span>
+          </div>
+        </>
+      );
+    }
+
     return (
       <div className="small text-muted fst-italic">
         Loại thông báo này sẽ được hỗ trợ sau
@@ -126,6 +158,14 @@ const Notifications = () => {
             break;
           }
           navigate(`/yeu-cau/${requestId}`, { replace: false });
+          break;
+        case NOTIFICATION_TYPES.NEW_REQUEST:
+          const qState = notification?.data?.request_id;
+          const dateState = notification?.data?.date;
+          navigate("/xu-ly-yeu-cau", {
+            replace: false,
+            state: { qState, dateState }
+          });
           break;
         default:
           break;
@@ -177,8 +217,6 @@ const Notifications = () => {
     });
     return () => socket.off(SOCKET_EVENTS.NEW_NOTIFICATION);
   }, [handleUpdateNotifications]);
-
-
 
   const badgeContent = unreadCount > MAX_DISPLAY ? `+${MAX_DISPLAY}` : unreadCount;
 

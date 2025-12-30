@@ -56,7 +56,8 @@ export const CLIENT_FILTERS = {
 export const NOTIFICATION_TYPES = Object.freeze({
   REQUEST_REPLY_STUDENT: "REQUEST_REPLY_STUDENT", // Thông báo trả lời request cho sinh viên
   REQUEST_ASSIGNED: "REQUEST_ASSIGNED",           // Thông báo được phân công request cho officer
-  CHAT_MESSAGE: "CHAT_MESSAGE"                    // Thông báo tin nhắn chat
+  CHAT_MESSAGE: "CHAT_MESSAGE",                    // Thông báo tin nhắn chat
+  NEW_REQUEST: "NEW_REQUEST"                       // Thông báo có request mới (Dành cho staff)
 });
 
 // account variables
@@ -101,6 +102,13 @@ export const REQUEST_PRIORITY = Object.freeze({
   [REQUEST_PRIORITY_ENUM.MOT]: { label: "Trung bình", value: 1, variant: "info" },
   [REQUEST_PRIORITY_ENUM.HAI]: { label: "Cao", value: 2, variant: "warning" },
   [REQUEST_PRIORITY_ENUM.BA]: { label: "Rất cao", value: 3, variant: "danger" },
+});
+
+export const REQUEST_PRIORITY_MODEL = Object.freeze({
+  [REQUEST_PRIORITY_ENUM.KHONG]: { label: "Rất cao", value: 0, variant: "danger" },
+  [REQUEST_PRIORITY_ENUM.MOT]: { label: "Cao", value: 1, variant: "warning" },
+  [REQUEST_PRIORITY_ENUM.HAI]: { label: "Thấp", value: 2, variant: "secondary" },
+  [REQUEST_PRIORITY_ENUM.BA]: { label: "Trung bình", value: 3, variant: "info" },
 });
 export const REQUEST_STATUS_ENUM = Object.freeze({
   PENDING: "Pending",

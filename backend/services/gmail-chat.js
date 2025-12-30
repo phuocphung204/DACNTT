@@ -260,7 +260,7 @@ const messageHandler = async (message) => {
     // Cách này ổn định hơn và tránh lỗi historyId quá hạn
     const listResponse = await gmail.users.messages.list({
       userId: 'me',
-      q: "is:unread from:(@gmail.com OR @student.tdtu.edu.vn) subject:\"Phản hồi về yêu cầu:\""
+      q: "is:unread from:(@gmail.com OR @student.tdtu.edu.vn OR @roratu.com) subject:\"Phản hồi về yêu cầu:\""
     });
 
     const messages = listResponse.data.messages;

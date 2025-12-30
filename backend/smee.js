@@ -6,18 +6,18 @@ dotenv.config();
 
 // Undici global agent configuration
 setGlobalDispatcher(
-    new Agent({
-        headersTimeout: 0, // TẮT timeout headers
-        bodyTimeout: 0,
-    })
+	new Agent({
+		headersTimeout: 0, // TẮT timeout headers
+		bodyTimeout: 0,
+	})
 );
 
 // Connect to watch Gmail
 // Smee Client setup để chuyển tiếp url từ smee.io về máy cục bộ
 const smee = new SmeeClient({
-    source: process.env.SMEE_CLIENT_URL,
-    target: process.env.SMEE_TARGET_URL,
-    logger: console
+	source: process.env.SMEE_CLIENT_URL,
+	target: process.env.SMEE_TARGET_URL,
+	logger: console
 });
 
 smee.start();

@@ -44,6 +44,7 @@ export const authService = backendApi.injectEndpoints({
         } catch (error) {
           console.error("Logout failed: ", error);
         } finally {
+          backendApi.util.resetApiState();
           disconnectSocket();
           dispatch(logout());
         }

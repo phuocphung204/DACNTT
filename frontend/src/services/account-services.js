@@ -53,6 +53,12 @@ const accountServices = backendApi.injectEndpoints({
         { type: "Account", id: arg?.accountId },
       ],
     }),
+    getDepartmentAndAccountsWithLabels: build.query({
+      query: (label) => ({
+        url: `/accounts/department_labels/${label}`,
+        method: "GET",
+      }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -62,4 +68,5 @@ export const {
   useGetAccountByIdQuery,
   useCreateAccountMutation,
   useUpdateAccountMutation,
+  useGetDepartmentAndAccountsWithLabelsQuery,
 } = accountServices;

@@ -189,6 +189,7 @@ export const getAllRequests = async (req, res) => {
 			const lastDayOfWeek = new Date(firstDayOfWeek);
 			lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
 			filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
+			console.log("firstDayOfWeek", firstDayOfWeek, "lastDayOfWeek", lastDayOfWeek);
 		}
 		// Mặc định lấy hôm nay
 		else {
@@ -267,6 +268,7 @@ export const usePredictionByRequestId = async (req, res) => {
 				request.priority = 0;
 		}
 		await request.save();
+		sendAssignmentNotification(req, assigned_to, request);
 
 		res.status(200).json({ ec: 200, em: "Prediction marked as used", dt: request });
 	} catch (error) {
@@ -474,3 +476,21 @@ export const searchKnowledgeBase = async (req, res) => {
 		res.status(500).json({ ec: 500, em: error.message });
 	}
 };
+
+const sendAssignmentNotification = async (req, assigned_to, request) => {
+	const sender = {
+		user_id: req.account._id,
+		name: req.account.name,
+		avatar: req.account.avatar
+	};
+	const notification = await createNotification({
+		sender: sender,
+		recipient_id: assigned_to,
+		type: NOTIFICATION_TYPES.REQUEST_ASSIGNED,
+		entity_id: request._id,
+		data: {
+			request_subject: request.subject
+		},
+	});
+	sendNotification(assigned_to, notification);
+}

@@ -18,7 +18,7 @@ import { toast } from "react-toastify";
 import { useGetRequestByIdQuery } from "#services/request-services";
 
 import { formatDateTime } from "#utils";
-import { REQUEST_PRIORITY, REQUEST_STATUS } from "#components/_variables";
+import { REQUEST_PRIORITY_MODEL, REQUEST_STATUS } from "#components/_variables";
 import RequestDetailTab from "#components/request-details/request-detail-tab";
 import RequestConversationTab from "#components/request-details/request-conversation-tab";
 import RequestSendMailTab from "#components/request-details/request-send-mail-tab";
@@ -59,8 +59,8 @@ const RequestDetailsPage = () => {
   const normalizedStatus = normalizeStatus(detail?.status);
   const statusLabel = REQUEST_STATUS[normalizedStatus]?.label || "Khác";
   const statusVariant = REQUEST_STATUS[normalizedStatus]?.variant || "secondary";
-  const priorityLabel = REQUEST_PRIORITY[Number(detail?.priority)]?.label || "Trung bình";
-  const priorityVariant = REQUEST_PRIORITY[Number(detail?.priority)]?.variant || "secondary";
+  const priorityLabel = REQUEST_PRIORITY_MODEL[Number(detail?.priority)]?.label || "Trung bình";
+  const priorityVariant = REQUEST_PRIORITY_MODEL[Number(detail?.priority)]?.variant || "secondary";
 
   const labelValue = detail?.label || detail?.prediction?.label || "Chưa gán";
 

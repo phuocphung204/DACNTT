@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Badge, Button, Table } from "react-bootstrap";
 import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 
-import { REQUEST_PRIORITY } from "#components/_variables";
+import { REQUEST_PRIORITY_MODEL } from "#components/_variables";
 import { formatDateTime } from "#utils/format";
 
 import styles from "../../pages/staff-requests-process/staff-requests-process-page.module.scss";
@@ -40,8 +40,8 @@ const RequestTable = ({ data, onViewDetail, onSendReminder, remindLoadingId }) =
         header: "Ưu tiên",
         accessorKey: "priority",
         cell: (info) => (
-          <Badge bg={REQUEST_PRIORITY[info.getValue()]?.variant}>
-            {REQUEST_PRIORITY[info.getValue()]?.label}
+          <Badge bg={REQUEST_PRIORITY_MODEL[info.getValue()]?.variant}>
+            {REQUEST_PRIORITY_MODEL[info.getValue()]?.label}
           </Badge>
         ),
       },
