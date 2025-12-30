@@ -58,6 +58,7 @@ const requestSchema = new Schema(
 		prediction: predictSchema,
 		assigned_to: { type: Schema.Types.ObjectId, ref: "Account", default: null },
 		status: { type: String, enum: ["Pending", "Assigned", "InProgress", "Resolved"], default: "Pending" },
+		is_overdue: { type: Boolean, default: false },
 		attachments: [attachmentSchema],
 		history: [historySchema]
 	}

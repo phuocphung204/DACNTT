@@ -494,3 +494,33 @@ const sendAssignmentNotification = async (req, assigned_to, request) => {
 	});
 	sendNotification(assigned_to, notification);
 }
+
+export const assignOverdueRequests = async (req, res) => {
+	try {
+		const requests = await Request.find({ status: { $in: ["Assigned", "InProgress"] }, is_overdue: false }).select("status history is_overdue");
+		const now = new Date();
+
+		await Promise.all(
+			requests.map(async (request) => {
+				const assignedHistory = request.history?.find(h => h.status === "Assigned");
+				if (!assignedHistory?.changed_at) return;
+
+				const assignedAt = assignedHistory.changed_at;
+				const diffTime = Math.abs(now - assignedAt);
+				const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+				if (diffDays > 2 && !request.is_overdue) {
+					request.is_overdue = true;
+					return request.save();
+				}
+			})
+		);
+
+		const overdueRequests = await Request.find({ status: { $in: ["Assigned", "InProgress"] }, is_overdue: true }).select(" _id assigned_to");
+		// TODO: gọi api notify officer
+
+		res.status(200).json({ ec: 200, em: "Overdue requests updated successfully" });
+	} catch (error) {
+		res.status(500).json({ ec: 500, em: error.message });
+	}
+};

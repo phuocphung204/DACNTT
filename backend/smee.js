@@ -20,7 +20,7 @@ const smee = new SmeeClient({
 	logger: console
 });
 
-smee.start();
-
-// Khởi động Gmail Watcher
-await initGmailWatcher();
+if (process.env.NODE_ENV === "production")
+    smee.start();
+    // Khởi động Gmail Watcher
+    await initGmailWatcher();

@@ -1,6 +1,6 @@
 import express from "express";
 
-import { createRequest, getAllRequests, usePredictionByRequestId, assignRequestToOfficer, getRequestById, uploadAttachments, downloadAttachment, getMyAssignedRequests, searchKnowledgeBase, getMyAssignedRequestsForManage } from "../controllers/requestController.js";
+import { createRequest, getAllRequests, usePredictionByRequestId, assignRequestToOfficer, getRequestById, uploadAttachments, downloadAttachment, getMyAssignedRequests, searchKnowledgeBase, assignOverdueRequests, getMyAssignedRequestsForManage } from "../controllers/requestController.js";
 import { readUnreadEmails } from "../services/email_ggapi.js";
 import { protect, staff, upload, staff_or_officer, officer } from "../middlewares/auth.js";
 
@@ -33,6 +33,11 @@ router.get("/", protect, staff, getAllRequests);
 // @route   POST /api/requests
 // @access  System
 router.post("/", createRequest);
+
+// Assign overdue requests to officers
+// @route   POST /api/requests/assign-overdue
+// @access  System
+router.post("/assign-overdue", assignOverdueRequests);
 
 // Endpoint for Pub/Sub to push email notifications and process unread emails
 // @route   POST /api/requests/pubsub
