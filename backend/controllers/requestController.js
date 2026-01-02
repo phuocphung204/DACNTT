@@ -224,16 +224,20 @@ export const getAllRequests = async (req, res) => {
 			count_pending, count_assigned, count_in_progress, count_resolved, total] = await Promise.all([
 				Request.find({ ...filter, status: "Pending" })
 					.sort({ priority: -1, created_at: -1 })
-					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
+					.select('_id student_email subject created_at updated_at status priority label assigned_to')
+					.populate('department_id', 'name'),
 				Request.find({ ...filter, status: "Assigned" })
 					.sort({ priority: -1, created_at: -1 })
-					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
+					.select('_id student_email subject created_at updated_at status priority label assigned_to')
+					.populate('department_id', 'name'),
 				Request.find({ ...filter, status: "InProgress" })
 					.sort({ priority: -1, created_at: -1 })
-					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
+					.select('_id student_email subject created_at updated_at status priority label assigned_to')
+					.populate('department_id', 'name'),
 				Request.find({ ...filter, status: "Resolved" })
 					.sort({ priority: -1, created_at: -1 })
-					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
+					.select('_id student_email subject created_at updated_at status priority label assigned_to')
+					.populate('department_id', 'name'),
 				Request.countDocuments({ ...filter, status: "Pending" }),
 				Request.countDocuments({ ...filter, status: "Assigned" }),
 				Request.countDocuments({ ...filter, status: "InProgress" }),

@@ -17,11 +17,6 @@ router.get("/my-assigned-requests", protect, officer, getMyAssignedRequests);
 // @route   GET /api/requests/knowledge-base/search?label=<query>&q=<query>
 // @access   Private/Officer
 router.get("/knowledge-base/search", protect, officer, searchKnowledgeBase);
-// Download attachment by request ID and attachment ID
-// @route   GET /api/requests/:request_id/attachments/:attachment_id
-// @access  Private/Officer
-router.get("/:request_id/attachments/:attachment_id", protect, officer, downloadAttachment);
-
 
 // Staff
 router.get("/test", (req, res) => {
