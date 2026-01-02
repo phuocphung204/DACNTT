@@ -188,6 +188,9 @@ export const getAllRequests = async (req, res) => {
 		if (timeRange === "date") {
 			const { date } = req.query;
 			const selectedDate = new Date(date);
+			if (Number.isNaN(selectedDate.getTime())) {
+				return res.status(400).json({ ec: 400, em: "Invalid date" });
+			}
 			const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
 			const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
 			filter.created_at = { $gte: startOfDay, $lt: endOfDay };
@@ -203,11 +206,12 @@ export const getAllRequests = async (req, res) => {
 			const firstDayOfWeek = new Date(now);
 			const day = firstDayOfWeek.getDay() || 7; // CN = 7
 			firstDayOfWeek.setDate(firstDayOfWeek.getDate() - day + 1);
+			firstDayOfWeek.setHours(0, 0, 0, 0);
 
 			const lastDayOfWeek = new Date(firstDayOfWeek);
 			lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
+			lastDayOfWeek.setHours(0, 0, 0, 0);
 			filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
-			console.log("firstDayOfWeek", firstDayOfWeek, "lastDayOfWeek", lastDayOfWeek);
 		}
 		// Mặc định lấy hôm nay
 		else {
@@ -354,7 +358,9 @@ export const getMyAssignedRequests = async (req, res) => {
 			lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
 			firstDayOfWeek.setHours(0, 0, 0, 0);
 			lastDayOfWeek.setHours(0, 0, 0, 0);
+			lastDayOfWeek.setHours(0, 0, 0, 0);
 			filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
+			console.log("firstDayOfWeek:", firstDayOfWeek, "lastDayOfWeek:", lastDayOfWeek);
 		}
 		// Mặc định lấy hôm nay
 		else {
