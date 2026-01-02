@@ -6,6 +6,23 @@ import { protect, staff, upload, staff_or_officer, officer } from "../middleware
 
 const router = express.Router();
 
+// Officer
+
+// Get my assigned requests
+// @route   GET /api/requests/my-assigned-requests?date=<date>&today=false&weekly=false
+// @access  Private/Officer
+router.get("/my-assigned-requests", protect, officer, getMyAssignedRequests);
+
+// TODO: Thêm thanh Search knowledge base search trực tiếp trong chi tiết request
+// @route   GET /api/requests/knowledge-base/search?label=<query>&q=<query>
+// @access   Private/Officer
+router.get("/knowledge-base/search", protect, officer, searchKnowledgeBase);
+// Download attachment by request ID and attachment ID
+// @route   GET /api/requests/:request_id/attachments/:attachment_id
+// @access  Private/Officer
+router.get("/:request_id/attachments/:attachment_id", protect, officer, downloadAttachment);
+
+
 // Staff
 
 // Use prediction by request ID
@@ -52,20 +69,6 @@ router.post("/:request_id/attachments", upload.single("attachment"), uploadAttac
 // @access  Private/Staff or Officer
 router.get("/:request_id", protect, staff_or_officer, getRequestById);
 
-// Officer
 
-// Download attachment by request ID and attachment ID
-// @route   GET /api/requests/:request_id/attachments/:attachment_id
-// @access  Private/Officer
-router.get("/:request_id/attachments/:attachment_id", protect, officer, downloadAttachment);
 
-// Get my assigned requests
-// @route   GET /api/requests/my-assigned-requests?date=<date>&today=false&weekly=false
-// @access  Private/Officer
-router.get("/my-assigned-requests", protect, officer, getMyAssignedRequests);
-
-// TODO: Thêm thanh Search knowledge base search trực tiếp trong chi tiết request
-// @route   GET /api/requests/knowledge-base/search?label=<query>&q=<query>
-// @access   Private/Officer
-router.get("/knowledge-base/search", protect, officer, searchKnowledgeBase);
 export default router;

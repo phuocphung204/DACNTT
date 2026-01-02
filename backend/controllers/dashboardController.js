@@ -3,6 +3,18 @@ import Department from "../models/Department.js";
 import Account from "../models/Account.js";
 import mongoose from "mongoose";
 
+const normalizeStartOfDay = (value) => {
+  const d = new Date(value);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+const normalizeEndExclusiveDay = (value) => {
+  const d = normalizeStartOfDay(value);
+  d.setDate(d.getDate() + 1);
+  return d;
+};
+
 // Lọc theo thời gian
 const buildTimeFilter = ({ annual, quarterly, monthly, weekly, startDate, endDate }) => {
   const today = new Date();
@@ -10,8 +22,8 @@ const buildTimeFilter = ({ annual, quarterly, monthly, weekly, startDate, endDat
   let createdAtFilter = {};
 
   if (startDate && endDate) {
-    createdAtFilter.$gte = new Date(startDate);
-    createdAtFilter.$lt = new Date(endDate);
+    createdAtFilter.$gte = normalizeStartOfDay(startDate);
+    createdAtFilter.$lt = normalizeEndExclusiveDay(endDate);
   } else {
     const year = Number(annual) || today.getFullYear();
     let startOfPeriod = new Date(year, 0, 1);
@@ -43,6 +55,9 @@ const buildTimeFilter = ({ annual, quarterly, monthly, weekly, startDate, endDat
       const endOfMonth = new Date(year, month + 1, 1);
       endOfPeriod = endOfPeriod < endOfMonth ? endOfPeriod : endOfMonth;
     }
+
+    startOfPeriod.setHours(0, 0, 0, 0);
+    endOfPeriod.setHours(0, 0, 0, 0);
 
     createdAtFilter.$gte = startOfPeriod;
     createdAtFilter.$lt = endOfPeriod;

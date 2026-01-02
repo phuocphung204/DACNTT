@@ -168,6 +168,9 @@ export const getAllRequests = async (req, res) => {
         // Ngày cụ thể
         if (date) {
             const selectedDate = new Date(date);
+            if (Number.isNaN(selectedDate.getTime())) {
+                return res.status(400).json({ ec: 400, em: "Invalid date" });
+            }
             const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
             const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
             filter.created_at = { $gte: startOfDay, $lt: endOfDay };
@@ -183,9 +186,11 @@ export const getAllRequests = async (req, res) => {
             const firstDayOfWeek = new Date(now);
             const day = firstDayOfWeek.getDay() || 7; // CN = 7
             firstDayOfWeek.setDate(firstDayOfWeek.getDate() - day + 1);
+            firstDayOfWeek.setHours(0, 0, 0, 0);
 
             const lastDayOfWeek = new Date(firstDayOfWeek);
             lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
+            lastDayOfWeek.setHours(0, 0, 0, 0);
             filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
         }
         // Mặc định lấy hôm nay
@@ -301,7 +306,7 @@ export const assignRequestToOfficer = async (req, res) => {
 export const getMyAssignedRequests = async (req, res) => {
     try {
         const { date, today, weekly } = req.query;
-        const officer_id = req.user._id;
+        const officer_id = req.account._id;
 
         const filter = { assigned_to: officer_id };
         const now = new Date();
@@ -309,25 +314,31 @@ export const getMyAssignedRequests = async (req, res) => {
         // Ngày cụ thể
         if (date) {
             const selectedDate = new Date(date);
+            if (Number.isNaN(selectedDate.getTime())) {
+                return res.status(400).json({ ec: 400, em: "Invalid date" });
+            }
             const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
             const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
             filter.created_at = { $gte: startOfDay, $lt: endOfDay };
         }
         // Hôm nay
-        else if (today === 'true') {
+        else if (today === "true") {
             const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
             filter.created_at = { $gte: startOfDay, $lt: endOfDay };
         }
         // Tuần hiện tại
-        else if (weekly === 'true') {
+        else if (weekly === "true") {
             const firstDayOfWeek = new Date(now);
             const day = firstDayOfWeek.getDay() || 7; // CN = 7
             firstDayOfWeek.setDate(firstDayOfWeek.getDate() - day + 1);
+            firstDayOfWeek.setHours(0, 0, 0, 0);
 
             const lastDayOfWeek = new Date(firstDayOfWeek);
             lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
+            lastDayOfWeek.setHours(0, 0, 0, 0);
             filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
+            console.log("firstDayOfWeek:", firstDayOfWeek, "lastDayOfWeek:", lastDayOfWeek);
         }
         // Mặc định lấy hôm nay
         else {
