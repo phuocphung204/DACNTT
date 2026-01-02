@@ -186,15 +186,6 @@ export const getDashboardAdvanced = async (req, res) => {
       endDate
     });
 
-    const timelineGroup = getTimelineGrouping({
-      annual,
-      quarterly,
-      monthly,
-      weekly,
-      startDate,
-      endDate
-    });
-
     const stats = await Request.aggregate([
       { $match: { ...timeQuery, label: { $ne: null } } },
 
@@ -212,76 +203,54 @@ export const getDashboardAdvanced = async (req, res) => {
             { $project: { _id: 0, label: "$_id", count: 1 } }
           ],
 
-          timeline_label: [
+          by_department: [
             {
               $group: {
-                _id: {
-                  ...timelineGroup._id,
-                  label: "$label"
-                },
+                _id: { department_id: "$department_id", label: "$label" },
                 count: { $sum: 1 }
               }
             },
             {
               $group: {
-                _id: timelineGroup._id,
-                labels: {
-                  $push: { k: "$_id.label", v: "$count" }
-                },
+                _id: "$_id.department_id",
+                labels: { $push: { k: "$_id.label", v: "$count" } },
                 total: { $sum: "$count" }
               }
             },
             {
+              $lookup: {
+                from: "departments",
+                localField: "_id",
+                foreignField: "_id",
+                as: "department"
+              }
+            },
+            { $unwind: { path: "$department", preserveNullAndEmptyArrays: true } },
+            {
               $project: {
                 _id: 0,
-                ...Object.keys(timelineGroup._id).reduce((acc, k) => {
-                  acc[k] = `$_id.${k}`;
-                  return acc;
-                }, {}),
+                department_id: "$_id",
+                department_name: "$department.name",
                 labels: { $arrayToObject: "$labels" },
                 total: 1
               }
             },
-            { $sort: timelineGroup.sort }
+            { $sort: { total: -1, department_name: 1 } }
           ]
         }
       }
     ]);
 
-    const result = stats[0];
-
-    const year = Number(annual) || (startDate ? startDate.getFullYear() : new Date().getFullYear());
-    const month = Number(monthly) || (startDate ? startDate.getMonth() + 1 : null);
-    const week = weekly ? Number(weekly) : null;
-
-    const allLabels = (result.by_label || []).map(x => x.label).filter(Boolean);
-    const zeroLabels = allLabels.reduce((acc, label) => {
-      acc[label] = 0;
-      return acc;
-    }, {});
-
-    const timelineLabelRaw = Array.isArray(result.timeline_label) ? result.timeline_label : [];
-    const timeline_label = buildTimelineSkeleton(
-      { annual, quarterly, monthly, weekly, startDate, endDate },
-      timelineLabelRaw,
-      year,
-      month,
-      week,
-      (key, value) => ({ [key]: value, labels: { ...zeroLabels }, total: 0 })
-    ).map(item => ({
-      ...item,
-      labels: { ...zeroLabels, ...(item.labels || {}) },
-      total: typeof item.total === "number" ? item.total : 0
-    }));
-
+    const result = stats[0] || {};
+    console.log(timeQuery);
     res.json({
       ec: 200,
       me: "Lấy dashboard nâng cao thành công",
       dt: {
-        total_requests: result.total_requests[0]?.count || 0,
-        by_status: result.by_status,
-        by_label: result.by_label,
-        timeline_label
+        total_requests: result.total_requests?.[0]?.count || 0,
+        by_status: result.by_status || [],
+        by_label: result.by_label || [],
+        by_department: result.by_department || []
       }
     });
 
