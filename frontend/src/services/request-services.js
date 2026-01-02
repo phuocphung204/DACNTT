@@ -36,6 +36,14 @@ export const requestService = backendApi.injectEndpoints({
       }),
     }),
 
+    searchKnowledgeBase: build.query({
+      query: (params) => ({
+        url: "/requests/knowledge-base/search",
+        method: "GET",
+        params,
+      }),
+    }),
+
     sendReminder: build.mutation({
       query: ({ requestId, subject, studentEmail }) => ({
         url: `/requests/${requestId}/remind`,
@@ -125,6 +133,7 @@ export const {
   useSendReminderMutation,
   useDownloadAttachmentMutation,
   useGetConversationQuery,
+  useSearchKnowledgeBaseQuery,
 
   // Các endpoint cho Officer
   useGetMyAssignedRequestsQuery,

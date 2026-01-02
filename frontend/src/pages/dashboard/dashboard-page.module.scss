@@ -1,0 +1,38 @@
+@use "sass:color";
+
+.statCard {
+  border: none;
+  color: #fff;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.08));
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(2px);
+
+  .card-body {
+    background: transparent;
+  }
+
+  .text-muted {
+    color: color.scale(#ffffff, $alpha: -40%) !important;
+  }
+}
+
+.primary {
+  background: linear-gradient(135deg, #0d6efd, color.scale(#0d6efd, $lightness: 15%));
+}
+
+.info {
+  background: linear-gradient(135deg, #0dcaf0, color.scale(#0dcaf0, $lightness: 10%));
+}
+
+.success {
+  background: linear-gradient(135deg, #198754, color.scale(#198754, $lightness: 10%));
+}
+
+.warning {
+  background: linear-gradient(135deg, #ffc107, color.scale(#ffc107, $lightness: -10%));
+  color: #2c1a00;
+
+  .text-muted {
+    color: color.scale(#2c1a00, $alpha: -40%) !important;
+  }
+}

@@ -14,6 +14,7 @@ import ManageAccountsPage from "#pages/manage-accounts/manage-accounts-page";
 import TestPage from "#pages/test-page/test-page";
 import OfficerRequestsProcessPage from "#pages/officer-requests-process/officer-requests-process-page";
 import { ACCOUNT_ROLES_ENUM } from "#components/_variables";
+import DashboardPage from "#pages/dashboard/dashboard-page";
 
 function App() {
   const accountRole = useSelector((state) => state.auth?.role);
@@ -25,8 +26,8 @@ function App() {
 
       <Route element={<RequireAuth><Layout /></RequireAuth>}>
         <Route index element={<div>Trang chủ</div>} />
+        <Route path="tong-quan" element={<DashboardPage />} />
         <Route path="yeu-cau/:id" element={<RequestDetailsPage />} />
-        <Route path="yeu-cau" element={<OfficerManageRequestsPage />} />
         <Route
           path="xu-ly-yeu-cau"
           element={

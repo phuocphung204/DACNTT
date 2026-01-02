@@ -16,7 +16,7 @@ const scrollbarOptions = {
 };
 
 const NAV_ITEMS = [
-  { id: "dashboard", label: "Tổng quan", icon: "bi-speedometer", to: "/admin/dashboard" },
+  { id: "dashboard", label: "Tổng quan", icon: "bi-speedometer", to: "/tong-quan" },
   // {
   //   id: "layout",
   //   label: "Layout Options",
@@ -32,7 +32,6 @@ const NAV_ITEMS = [
   //   ],
   // },
   { id: "manage-requests", label: "Quản lý yêu cầu", icon: "bi-folder-check", to: "/quan-ly-yeu-cau" },
-  { id: "officer-manage-requests", label: "Yêu cầu", icon: "bi-person-badge", to: "/yeu-cau" },
   // { id: "socket-io-setup", label: "Socket.io Setup", icon: "bi-plug", to: "/socket-io-setup" },
   { id: "staff-requests-process", label: "Xử lý yêu cầu", icon: "bi-people", to: "/xu-ly-yeu-cau", allowRoles: [ACCOUNT_ROLES_ENUM.STAFF] },
   { id: "officer-requests-process", label: "Xử lý yêu cầu", icon: "bi-people", to: "/xu-ly-yeu-cau", allowRoles: [ACCOUNT_ROLES_ENUM.OFFICER] },

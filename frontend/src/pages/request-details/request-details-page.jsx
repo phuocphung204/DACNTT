@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Alert,
@@ -15,7 +15,7 @@ import {
 import { BsArrowLeft, BsCheckCircle, BsChatDots, BsSend } from "react-icons/bs";
 import { toast } from "react-toastify";
 
-import { useGetRequestByIdQuery } from "#services/request-services";
+import { useGetRequestByIdQuery, useSearchKnowledgeBaseQuery } from "#services/request-services";
 
 import { formatDateTime } from "#utils";
 import { REQUEST_PRIORITY_MODEL, REQUEST_STATUS } from "#components/_variables";
@@ -54,6 +54,10 @@ const RequestDetailsPage = () => {
     skip: !id,
   });
 
+  const [labelSearch, setLabelSearch] = useState("");
+  const [keywordSearch, setKeywordSearch] = useState("");
+  const [searchParams, setSearchParams] = useState(null);
+
   const detail = data?.dt;
 
   const normalizedStatus = normalizeStatus(detail?.status);
@@ -63,6 +67,43 @@ const RequestDetailsPage = () => {
   const priorityVariant = REQUEST_PRIORITY_MODEL[Number(detail?.priority)]?.variant || "secondary";
 
   const labelValue = detail?.label || detail?.prediction?.label || "Chưa gán";
+
+  useEffect(() => {
+    if (labelValue && labelValue !== "Chưa gán") {
+      setLabelSearch(labelValue);
+      setSearchParams({ label: labelValue });
+    }
+  }, [labelValue]);
+
+  const {
+    data: knowledgeData,
+    isFetching: isKnowledgeFetching,
+    error: knowledgeError,
+  } = useSearchKnowledgeBaseQuery(searchParams, {
+    skip: !searchParams?.label,
+  });
+
+  const knowledgeItems = knowledgeData?.dt || [];
+
+  const handleKnowledgeSearchSubmit = (event) => {
+    event.preventDefault();
+    if (!labelSearch?.trim()) {
+      toast.warn("Vui lòng nhập nhãn để tìm kiếm");
+      return;
+    }
+    const params = { label: labelSearch.trim() };
+    if (keywordSearch.trim()) {
+      params.q = keywordSearch.trim();
+    }
+    setSearchParams(params);
+  };
+
+  const handleResetKnowledgeSearch = () => {
+    const fallbackLabel = labelValue !== "Chưa gán" ? labelValue : "";
+    setLabelSearch(fallbackLabel);
+    setKeywordSearch("");
+    setSearchParams(fallbackLabel ? { label: fallbackLabel } : null);
+  };
 
   const handleMarkResolved = () => {
     toast.info("Sắp ra mắt: Tính năng đánh dấu hoàn thành sẽ sớm ra mắt");
@@ -206,6 +247,84 @@ const RequestDetailsPage = () => {
                 <span className="text-muted small">Nhãn</span>
                 <span className="fw-semibold">{labelValue}</span>
               </div>
+            </Card.Body>
+          </Card>
+
+          <Card className="mb-3">
+            <Card.Body>
+              <div className="fw-semibold mb-2">Tìm kiếm knowledge base</div>
+              <Form onSubmit={handleKnowledgeSearchSubmit} className="d-flex flex-column gap-2 mb-3">
+                <Form.Group controlId="knowledgeLabel">
+                  <Form.Label className="small text-muted mb-1">Nhãn</Form.Label>
+                  <Form.Control
+                    size="sm"
+                    placeholder="Nhập nhãn (ví dụ: Học vụ, Học phí...)"
+                    value={labelSearch}
+                    onChange={(e) => setLabelSearch(e.target.value)}
+                    disabled
+                  />
+                </Form.Group>
+                <Form.Group controlId="knowledgeKeyword">
+                  <Form.Label className="small text-muted mb-1">Từ khóa (tùy chọn)</Form.Label>
+                  <Form.Control
+                    size="sm"
+                    placeholder="Tìm theo tiêu đề hoặc nội dung"
+                    value={keywordSearch}
+                    onChange={(e) => setKeywordSearch(e.target.value)}
+                  />
+                </Form.Group>
+                <div className="d-flex justify-content-end gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline-secondary"
+                    type="button"
+                    onClick={handleResetKnowledgeSearch}
+                    disabled={isKnowledgeFetching}
+                  >
+                    Đặt lại
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    type="submit"
+                    disabled={!labelSearch?.trim() || isKnowledgeFetching}
+                  >
+                    {isKnowledgeFetching ? <Spinner animation="border" size="sm" /> : "Tìm kiếm"}
+                  </Button>
+                </div>
+              </Form>
+
+              {knowledgeError && (
+                <Alert variant="danger" className="mb-2">
+                  {getErrorMessage(knowledgeError, "Không thể tải knowledge base")}
+                </Alert>
+              )}
+
+              {isKnowledgeFetching && (
+                <div className="text-center py-3">
+                  <Spinner animation="border" size="sm" />
+                </div>
+              )}
+
+              {!isKnowledgeFetching && knowledgeItems.length === 0 && (
+                <div className="text-muted small">Không có knowledge base phù hợp.</div>
+              )}
+
+              {!isKnowledgeFetching && knowledgeItems.length > 0 && (
+                <div
+                  className="d-flex flex-column gap-2 overflow-auto"
+                  style={{ maxHeight: "240px" }}
+                >
+                  {knowledgeItems.map((item) => (
+                    <div key={item._id || item.title} className="border rounded p-2">
+                      <div className="fw-semibold mb-1">{item.title}</div>
+                      <div className="text-muted small" style={{ whiteSpace: "pre-line" }}>
+                        {item.content}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card.Body>
           </Card>
 

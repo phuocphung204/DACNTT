@@ -5,6 +5,24 @@ import { supabase } from "../services/supabaseClient.js";
 import { NOTIFICATION_TYPES } from "../models/Notification.js";
 import { createNotification, sendNotification } from "./notification-controller.js";
 
+const sendAssignmentNotification = async (req, assigned_to, request) => {
+	const sender = {
+		user_id: req.account._id,
+		name: req.account.name,
+		avatar: req.account.avatar
+	};
+	const notification = await createNotification({
+		sender: sender,
+		recipient_id: assigned_to,
+		type: NOTIFICATION_TYPES.REQUEST_ASSIGNED,
+		entity_id: request._id,
+		data: {
+			request_subject: request.subject
+		},
+	});
+	sendNotification(assigned_to, notification);
+};
+
 // System
 export const createRequest = async (req, res) => {
 	try {
@@ -334,6 +352,8 @@ export const getMyAssignedRequests = async (req, res) => {
 
 			const lastDayOfWeek = new Date(firstDayOfWeek);
 			lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 7);
+			firstDayOfWeek.setHours(0, 0, 0, 0);
+			lastDayOfWeek.setHours(0, 0, 0, 0);
 			filter.created_at = { $gte: firstDayOfWeek, $lt: lastDayOfWeek };
 		}
 		// Mặc định lấy hôm nay
@@ -477,24 +497,6 @@ export const searchKnowledgeBase = async (req, res) => {
 	}
 };
 
-const sendAssignmentNotification = async (req, assigned_to, request) => {
-	const sender = {
-		user_id: req.account._id,
-		name: req.account.name,
-		avatar: req.account.avatar
-	};
-	const notification = await createNotification({
-		sender: sender,
-		recipient_id: assigned_to,
-		type: NOTIFICATION_TYPES.REQUEST_ASSIGNED,
-		entity_id: request._id,
-		data: {
-			request_subject: request.subject
-		},
-	});
-	sendNotification(assigned_to, notification);
-}
-
 export const assignOverdueRequests = async (req, res) => {
 	try {
 		const requests = await Request.find({ status: { $in: ["Assigned", "InProgress"] }, is_overdue: false }).select("status history is_overdue");
@@ -520,6 +522,24 @@ export const assignOverdueRequests = async (req, res) => {
 		// TODO: gọi api notify officer
 
 		res.status(200).json({ ec: 200, em: "Overdue requests updated successfully" });
+	} catch (error) {
+		res.status(500).json({ ec: 500, em: error.message });
+	}
+};
+
+export const updateRequestByOfficer = async (req, res) => {
+	try {
+		const { status } = req.body;
+		const request_id = req.params.request_id;
+
+		const request = await Request.findById(request_id);
+		if (!request) {
+			return res.status(404).json({ ec: 404, em: "Request not found" });
+		}
+		request.status = status;
+		request.history.push({ status: status, changed_by: req.account._id });
+		await request.save();
+		res.status(200).json({ ec: 200, em: "Request updated successfully", dt: { request } });
 	} catch (error) {
 		res.status(500).json({ ec: 500, em: error.message });
 	}

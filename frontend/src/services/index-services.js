@@ -5,3 +5,4 @@ export * from "./notification-services";
 export * from "./account-services";
 export * from "./request-services";
 export * from "./department-services";
+export * from "./dashboard-services";

@@ -65,15 +65,8 @@ const StaffRequestsProcessPage = () => {
       push: state.push,
     }))
   );
-
+  // TODO: sử dụng state từ điều hướng để thiết lập bộ lọc ban đầu
   // const { state: { qState = "", dateState = "", requestIdState = "" } = {} } = useLocation(); // Lấy state từ điều hướng
-
-  // const [filterValues, setFilterValues] = useState({
-  //   timeRange: ["today"],
-  //   priority: [],
-  //   status: [],
-  //   date: { value: [] },
-  // });
 
   const [clientFilterValues, setClientFilterValues] = useState({
     priority: [],
@@ -89,23 +82,6 @@ const StaffRequestsProcessPage = () => {
     resolved: 1,
   });
   const [remindLoadingId, setRemindLoadingId] = useState("");
-
-  // const timeRange = filterValues.timeRange?.[0] || "today";
-  // const requestParams = useMemo(() => {
-  //   const params = {};
-  //   if (timeRange === "today") {
-  //     params.today = true;
-  //   } else if (timeRange === "weekly") {
-  //     params.weekly = true;
-  //   } else if (timeRange === "monthly") {
-  //     params.monthly = true;
-  //   } else if (timeRange === "date") {
-  //     const selectedDate = filterValues.date?.value?.[0];
-  //     if (!selectedDate) return null;
-  //     params.date = selectedDate;
-  //   }
-  //   return params;
-  // }, [timeRange, filterValues.date]);
 
   const [requestParams, setRequestParams] = useState({ timeRange: "today" });
 
