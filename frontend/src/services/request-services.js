@@ -20,6 +20,7 @@ export const requestService = backendApi.injectEndpoints({
         url: `/requests/${requestId}`,
         method: "GET",
       }),
+      providesTags: (_result, _error, requestId) => [{ type: "Request", id: requestId }],
     }),
     applyPredictionByRequestId: build.mutation({
       query: ({ requestId, assignedTo }) => ({
@@ -34,6 +35,15 @@ export const requestService = backendApi.injectEndpoints({
         method: "PUT",
         data: payload,
       }),
+    }),
+
+    updateRequestByOfficer: build.mutation({
+      query: ({ requestId, payload }) => ({
+        url: `/requests/${requestId}`,
+        method: "PATCH",
+        data: payload,
+      }),
+      invalidatesTags: (_result, _error, { requestId }) => [{ type: "Request", id: requestId }],
     }),
 
     searchKnowledgeBase: build.query({
@@ -86,6 +96,7 @@ export const requestService = backendApi.injectEndpoints({
         url: `/requests/${requestId}/conversation`,
         method: "GET",
       }),
+      providesTags: (_result, _error, requestId) => [{ type: "RequestConversation", id: requestId }],
     }),
 
     // Các endpoint cho Officer
@@ -130,9 +141,11 @@ export const {
   useGetRequestByIdQuery,
   useApplyPredictionByRequestIdMutation,
   useAssignRequestToOfficerMutation,
+  useUpdateRequestByOfficerMutation,
   useSendReminderMutation,
   useDownloadAttachmentMutation,
   useGetConversationQuery,
+  useLazyGetConversationQuery,
   useSearchKnowledgeBaseQuery,
 
   // Các endpoint cho Officer

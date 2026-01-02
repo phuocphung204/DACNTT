@@ -55,7 +55,7 @@ const FilterOptions = {
     defaultValue: null,
     values: [
       { label: "Đang chờ", value: "Pending" },
-      { label: "Đang tiến hành", value: "InProgress" },
+      { label: "Đang xử lý", value: "InProgress" },
       { label: "Đã hoàn thành", value: "Completed" },
       { label: "Đã giải quyết", value: "Resolved" },
     ],

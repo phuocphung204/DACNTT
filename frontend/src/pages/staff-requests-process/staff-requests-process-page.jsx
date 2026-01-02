@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Alert, Badge, Button, Card, Form, Nav, Spinner } from "react-bootstrap";
 import { PaginationControl } from "react-bootstrap-pagination-control";
-import { BsArrowRepeat } from "react-icons/bs";
 import { toast } from "react-toastify";
 
 import { userModalDialogStore, useShallow } from "#custom-hooks";
@@ -15,13 +14,12 @@ import { getErrorMessage } from "../../components/staff-requests-process/helpers
 
 import styles from "./staff-requests-process-page.module.scss";
 import { removeVietnameseTones } from "#utils/normalize";
-import { useLocation } from "react-router-dom";
 
 const PRIORITY_SLA_HOURS = {
-  0: 4,
-  1: 8,
+  0: 48,
+  1: 36,
   2: 24,
-  3: 48,
+  3: 12,
 };
 
 const DUE_SOON_MS = 24 * 60 * 60 * 1000;
@@ -52,12 +50,6 @@ const computeDueState = (status, dueAt, now) => {
   if (diff <= DUE_SOON_MS) return "due";
   return "none";
 };
-
-// const sortByCreatedAtDesc = (a, b) => {
-//   const first = new Date(a?.created_at || a?.createdAt || 0).getTime();
-//   const second = new Date(b?.created_at || b?.createdAt || 0).getTime();
-//   return second - first;
-// };
 
 const StaffRequestsProcessPage = () => {
   const { push } = userModalDialogStore(
@@ -219,6 +211,7 @@ const StaffRequestsProcessPage = () => {
       bodyProps: {
         requestId: request._id,
         onAssigned: handleRefresh,
+        activeTab: activeTab,
       },
       size: "xl",
       buttons: [],
@@ -328,7 +321,6 @@ const StaffRequestsProcessPage = () => {
           onClick={handleRefresh}
           disabled={loading}
         >
-          <BsArrowRepeat className="me-1" />
           Làm mới
         </Button>
       </div>

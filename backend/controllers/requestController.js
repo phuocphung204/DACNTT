@@ -166,7 +166,7 @@ export const downloadAttachment = async (req, res) => {
 export const getRequestById = async (req, res) => {
 	try {
 		const request_id = req.params.request_id;
-		const request = await Request.findById(request_id);
+		const request = await Request.findById(request_id).populate('department_id', '_id name');
 		if (!request) {
 			return res.status(404).json({ ec: 404, em: "Request not found" });
 		}
@@ -223,16 +223,16 @@ export const getAllRequests = async (req, res) => {
 		const [requests_pending, requests_assigned, requests_in_progress, requests_resolved,
 			count_pending, count_assigned, count_in_progress, count_resolved, total] = await Promise.all([
 				Request.find({ ...filter, status: "Pending" })
-					.sort({ created_at: -1, priority: 1 })
+					.sort({ priority: -1, created_at: -1 })
 					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
 				Request.find({ ...filter, status: "Assigned" })
-					.sort({ created_at: -1, priority: 1 })
+					.sort({ priority: -1, created_at: -1 })
 					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
 				Request.find({ ...filter, status: "InProgress" })
-					.sort({ created_at: -1, priority: 1 })
+					.sort({ priority: -1, created_at: -1 })
 					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
 				Request.find({ ...filter, status: "Resolved" })
-					.sort({ created_at: -1, priority: 1 })
+					.sort({ priority: -1, created_at: -1 })
 					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
 				Request.countDocuments({ ...filter, status: "Pending" }),
 				Request.countDocuments({ ...filter, status: "Assigned" }),
@@ -372,13 +372,13 @@ export const getMyAssignedRequests = async (req, res) => {
 		const [requests_assigned, requests_in_progress, requests_resolved,
 			count_assigned, count_in_progress, count_resolved, total] = await Promise.all([
 				Request.find({ ...filter, status: "Assigned" })
-					.sort({ created_at: -1, priority: 1 })
+					.sort({ priority: -1, created_at: -1 })
 					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
 				Request.find({ ...filter, status: "InProgress" })
-					.sort({ created_at: -1, priority: 1 })
+					.sort({ priority: -1, created_at: -1 })
 					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
 				Request.find({ ...filter, status: "Resolved" })
-					.sort({ created_at: -1, priority: 1 })
+					.sort({ priority: -1, created_at: -1 })
 					.select('_id student_email subject created_at updated_at status priority label assigned_to'),
 				Request.countDocuments({ ...filter, status: "Assigned" }),
 				Request.countDocuments({ ...filter, status: "InProgress" }),
@@ -447,7 +447,7 @@ export const getMyAssignedRequestsForManage = async (req, res) => {
 		const skip = (pageNumber - 1) * pageSize;
 		const [myAssignedRequests, total] = await Promise.all([
 			Request.find({ ...filter })
-				.sort({ created_at: -1, priority: 1 })
+				.sort({ priority: -1, created_at: -1 })
 				.skip(skip)
 				.limit(pageSize).select("_id student_email subject created_at updated_at status priority label assigned_to"),
 			Request.countDocuments({ ...filter })
@@ -510,6 +510,7 @@ export const assignOverdueRequests = async (req, res) => {
 
 		await Promise.all(
 			requests.map(async (request) => {
+				const priority = request.priority;
 				const assignedHistory = request.history?.find(h => h.status === "Assigned");
 				if (!assignedHistory?.changed_at) return;
 
@@ -517,10 +518,27 @@ export const assignOverdueRequests = async (req, res) => {
 				const diffTime = Math.abs(now - assignedAt);
 				const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-				if (diffDays > 2 && !request.is_overdue) {
-					request.is_overdue = true;
-					return request.save();
+				switch (priority) {
+					case 3: // Critical
+						if (diffDays > 0.5) return;
+						request.is_overdue = true;
+						break;
+					case 2: // High
+						if (diffDays > 1) return;
+						request.is_overdue = true;
+						break;
+					case 1: // Medium
+						if (diffDays > 1.5) return;
+						request.is_overdue = true;
+						break;
+					case 0: // Low
+						if (diffDays > 2) return;
+						request.is_overdue = true;
+						break;
+					default:
+						break;
 				}
+				return request.save();
 			})
 		);
 

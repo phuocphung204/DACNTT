@@ -15,7 +15,7 @@ import {
 import { BsArrowLeft, BsCheckCircle, BsChatDots, BsSend } from "react-icons/bs";
 import { toast } from "react-toastify";
 
-import { useGetRequestByIdQuery, useSearchKnowledgeBaseQuery } from "#services/request-services";
+import { useGetRequestByIdQuery, useSearchKnowledgeBaseQuery, useUpdateRequestByOfficerMutation } from "#services/request-services";
 
 import { formatDateTime } from "#utils";
 import { REQUEST_PRIORITY_MODEL, REQUEST_STATUS } from "#components/_variables";
@@ -23,14 +23,7 @@ import RequestDetailTab from "#components/request-details/request-detail-tab";
 import RequestConversationTab from "#components/request-details/request-conversation-tab";
 import RequestSendMailTab from "#components/request-details/request-send-mail-tab";
 import { getErrorMessage } from "#components/request-details/request-details-utils";
-
-const normalizeStatus = (status) => {
-  if (status === "Assigned") return "InProgress";
-  if (status === "InProgress" || status === "Resolved" || status === "Pending") {
-    return status;
-  }
-  return "Pending";
-};
+import { useGetConversationQuery, useLazyGetConversationQuery } from "services/request-services";
 
 const TAB_KEYS_ENUM = Object.freeze({
   DETAIL: "detail",
@@ -54,15 +47,16 @@ const RequestDetailsPage = () => {
     skip: !id,
   });
 
+  const [updateRequestByOfficer, { isLoading: isUpdatingStatus }] = useUpdateRequestByOfficerMutation();
+  const [getConversation] = useLazyGetConversationQuery();
   const [labelSearch, setLabelSearch] = useState("");
   const [keywordSearch, setKeywordSearch] = useState("");
   const [searchParams, setSearchParams] = useState(null);
 
   const detail = data?.dt;
 
-  const normalizedStatus = normalizeStatus(detail?.status);
-  const statusLabel = REQUEST_STATUS[normalizedStatus]?.label || "Khác";
-  const statusVariant = REQUEST_STATUS[normalizedStatus]?.variant || "secondary";
+  const statusLabel = REQUEST_STATUS[detail?.status]?.label || "Khác";
+  const statusVariant = REQUEST_STATUS[detail?.status]?.variant || "secondary";
   const priorityLabel = REQUEST_PRIORITY_MODEL[Number(detail?.priority)]?.label || "Trung bình";
   const priorityVariant = REQUEST_PRIORITY_MODEL[Number(detail?.priority)]?.variant || "secondary";
 
@@ -105,13 +99,34 @@ const RequestDetailsPage = () => {
     setSearchParams(fallbackLabel ? { label: fallbackLabel } : null);
   };
 
-  const handleMarkResolved = () => {
-    toast.info("Sắp ra mắt: Tính năng đánh dấu hoàn thành sẽ sớm ra mắt");
+  const statusActionLabel = detail?.status === "Resolved"
+    ? null
+    : detail?.status === "Assigned"
+      ? "Nhận yêu cầu"
+      : "Đánh dấu hoàn thành";
+
+  const statusActionVariant = detail?.status === "Assigned" ? "primary" : "success";
+
+  const handleStatusAction = async () => {
+    if (!detail?._id) return;
+    const nextStatus = detail.status === "Assigned" ? "InProgress" : "Resolved";
+    try {
+      await updateRequestByOfficer({ requestId: id, payload: { status: nextStatus } }).unwrap();
+      toast.success(nextStatus === "InProgress" ? "Đã nhận yêu cầu" : "Đã đánh dấu hoàn thành");
+      refetch();
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Cập nhật trạng thái thất bại"));
+    }
   };
 
-  const handleTemporaryReply = () => {
-    toast.info("Sắp ra mắt: Tính năng trả lời tạm thời sẽ sớm ra mắt");
-  };
+  const handleRefresh = () => {
+    try {
+      refetch();
+      getConversation(id);
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -175,7 +190,7 @@ const RequestDetailsPage = () => {
             size="sm"
             variant="outline-secondary"
             className="mt-2"
-            onClick={refetch}
+            onClick={handleRefresh}
             disabled={isFetching}
           >
             {isFetching ? <Spinner animation="border" size="sm" /> : "Làm mới"}
@@ -185,7 +200,7 @@ const RequestDetailsPage = () => {
 
       <Row className="g-3">
         <Col xl={8} lg={7}>
-          <Card>
+          <Card className="position-sticky" style={{ top: "5rem" }}>
             <Card.Body>
               <Tabs activeKey={activeTabKey} onSelect={(key) => setActiveTabKey(key)} className="mb-3">
                 <Tab eventKey={TAB_KEYS_ENUM.DETAIL} title="Chi tiết">
@@ -345,12 +360,14 @@ const RequestDetailsPage = () => {
 
           <Card>
             <Card.Body className="d-flex flex-column gap-2">
-              <Button variant="success" onClick={handleMarkResolved}>
-                <BsCheckCircle className="me-1" />
-                Đánh dấu hoàn thành
-              </Button>
-              <Button variant="outline-primary" onClick={handleTemporaryReply}>
-                Trả lời tạm thời
+              {statusActionLabel && (
+                <Button variant={statusActionVariant} onClick={handleStatusAction} disabled={isUpdatingStatus}>
+                  {isUpdatingStatus ? <Spinner animation="border" size="sm" className="me-2" /> : <BsCheckCircle className="me-1" />}
+                  {statusActionLabel}
+                </Button>
+              )}
+              <Button variant="outline-primary" onClick={() => setActiveTabKey(TAB_KEYS_ENUM.SEND_MAIL)}>
+                Gửi phản hồi qua email
               </Button>
               <Button
                 variant="outline-secondary"

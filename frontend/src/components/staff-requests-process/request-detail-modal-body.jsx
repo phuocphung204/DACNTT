@@ -11,16 +11,15 @@ import {
 } from "#services/request-services";
 import {
   useGetAllLabelsQuery,
-  useGetOfficersByDepartmentQuery,
 } from "#services/department-services";
-import { useGetDepartmentAndAccountsWithLabelsQuery } from "#services/account-services";
+import { useGetDepartmentAndAccountsWithLabelsQuery, useGetOfficersByDepartmentQuery } from "#services/account-services";
 import { REQUEST_PRIORITY, REQUEST_PRIORITY_MODEL, REQUEST_STATUS } from "#components/_variables";
 import { formatDateTime } from "#utils/format";
 
-import { getErrorMessage, toAsciiLabel } from "./helpers";
+import { getErrorMessage } from "./helpers";
 import styles from "../../pages/staff-requests-process/staff-requests-process-page.module.scss";
 
-const RequestDetailModalBody = ({ requestId, onAssigned }) => {
+const RequestDetailModalBody = ({ requestId, onAssigned, activeTab = "pending" }) => {
   const [selectedOfficer, setSelectedOfficer] = useState("");
   const [showManual, setShowManual] = useState(false);
   const [manualForm, setManualForm] = useState({
@@ -30,7 +29,6 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
     officerId: "",
   });
   const [downloadingId, setDownloadingId] = useState("");
-
   const {
     data: detailResponse,
     isLoading,
@@ -40,7 +38,6 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
 
   const detail = detailResponse?.dt;
   const predictionDepartmentId = detail?.prediction?.department_id;
-
   const {
     data: predictionOfficersResponse,
     refetch: refetchPredictionOfficers,
@@ -48,6 +45,14 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
     predictionDepartmentId,
     { skip: !predictionDepartmentId }
   );
+  const currentOfficerDisplay = useMemo(() => {
+    const assignedTo = detail?.assigned_to;
+    const officer = Array.isArray(predictionOfficersResponse?.dt)
+      ? predictionOfficersResponse.dt.find((item) => item._id === assignedTo)
+      : null;
+    if (!officer) return "Chưa có";
+    return `${officer.name} - đang nhận: ${officer.total_requests_count || 0} - đang xử lý: ${officer.in_progress_requests_count || 0}`;
+  }, [detail, predictionOfficersResponse]);
 
   const predictionOfficers = useMemo(() => {
     const list = Array.isArray(predictionOfficersResponse?.dt)
@@ -57,7 +62,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
   }, [predictionOfficersResponse]);
 
   const { data: allLabelsResponse } = useGetAllLabelsQuery(undefined, {
-    skip: !showManual,
+    skip: showManual === false,
   });
 
   const manualLabels = useMemo(() => {
@@ -91,6 +96,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
   }, [predictionOfficers, selectedOfficer]);
 
   useEffect(() => {
+    if (activeTab !== "pending") return; // chỉ kiểm tra khi tab pending
     if (!manualLabels || manualLabels.length === 0) {
       setManualForm((prev) => ({ ...prev, label: "" }));
       return;
@@ -103,15 +109,17 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
         officerId: "",
       }));
     }
-  }, [manualForm.label, manualLabels]);
+  }, [manualForm.label, manualLabels, activeTab]);
 
   useEffect(() => {
+    if (activeTab !== "pending") return; // chỉ kiểm tra khi tab pending
     if (derivedDepartmentId && derivedDepartmentId !== manualForm.departmentId) {
       setManualForm((prev) => ({ ...prev, departmentId: derivedDepartmentId }));
     }
-  }, [derivedDepartmentId, manualForm.departmentId]);
+  }, [derivedDepartmentId, manualForm.departmentId, activeTab]);
 
   useEffect(() => {
+    if (activeTab !== "pending") return; // chỉ kiểm tra khi tab pending
     if (manualOfficers.length === 0) {
       setManualForm((prev) => ({ ...prev, officerId: "" }));
       return;
@@ -123,7 +131,25 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
         officerId: manualOfficers?._id || "",
       }));
     }
-  }, [manualForm.officerId, manualOfficers]);
+  }, [manualForm.officerId, manualOfficers, activeTab]);
+
+  useEffect(() => { // Theo dõi tab assigned thay đổi để set form phân công thủ công
+    if (activeTab === "assigned") {
+      console.log("Active tab is 'assigned', setting manual form from detail", detail);
+      const priority = detail?.priority;
+      const departmentId = detail?.department_id?._id;
+      const label = detail?.label;
+      setManualForm({
+        departmentId: departmentId || "",
+        label: label || "",
+        priority: priority !== undefined ? Number(priority) : 0,
+      });
+    }
+  }, [activeTab, detail]);
+
+  useEffect(() => {
+    console.log("Manual form updated:", manualForm);
+  }, [manualForm]);
 
   const [_usePrediction, { isLoading: predictionLoading }] =
     useApplyPredictionByRequestIdMutation();
@@ -154,6 +180,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
   };
 
   const handleManualAssign = async () => {
+    console.log("Manual form data:", manualForm);
     if (!manualForm.departmentId || !manualForm.label || !manualForm.officerId) {
       toast.error("Vui lòng hoàn tất thông tin phân công");
       return;
@@ -163,7 +190,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
         requestId,
         payload: {
           assigned_to: manualForm.officerId,
-          priority: Number(manualForm.priority) || 3,
+          priority: Number(manualForm.priority) || 0,
           label: manualForm.label,
           department_id: manualForm.departmentId,
         },
@@ -173,7 +200,8 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
       }
       toast.success("Đã phân công thủ công");
       onAssigned?.();
-      refetchOfficersByLabel?.();
+      if (activeTab === "pending") refetchOfficersByLabel?.();
+      if (activeTab === "assigned") refetchPredictionOfficers?.();
       refetch?.();
     } catch (err) {
       toast.error(getErrorMessage(err, "Không thể phân công thủ công"));
@@ -237,6 +265,49 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
   const predictionPriorityScore = detail?.prediction?.priority?.score;
   const hasPrediction = Boolean(predictionDepartmentId);
 
+  const renderButton = (tabKey) => {
+    if (tabKey === "pending") {
+      return (
+        <>
+          <Button
+            size="sm"
+            variant="success"
+            onClick={handleUsePrediction}
+            disabled={!hasPrediction || !selectedOfficer || predictionLoading}
+          >
+            {predictionLoading ? (
+              <Spinner animation="border" size="sm" />
+            ) : (
+              <BsCheckCircle className="me-1" />
+            )}
+            Dùng dự đoán
+          </Button>
+          <Button
+            size="sm"
+            variant="outline-primary"
+            onClick={() => setShowManual((prev) => !prev)}
+          >
+            <BsPersonPlus className="me-1" />
+            Tự phân nhân
+          </Button>
+        </>
+      );
+    }
+    if (tabKey === "assigned") {
+      return (
+        <Button
+          size="sm"
+          variant="outline-primary"
+          onClick={handleManualAssign}
+        >
+          <BsPersonPlus className="me-1" />
+          Phân công lại
+        </Button>
+      );
+    }
+    return null;
+  }
+
   return (
     <div>
       <div className={styles.suggestionBar}>
@@ -270,39 +341,36 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
               name="prediction-officer"
               size="sm"
               value={selectedOfficer}
-              onChange={(event) => setSelectedOfficer(event.target.value)}
+              onChange={(event) => {
+                setSelectedOfficer(event.target.value);
+                if (activeTab === "assigned") setManualForm((prev) => ({ ...prev, officerId: event.target.value }));
+              }}
               disabled={!hasPrediction || predictionOfficers.length === 0}
             >
               <option value="">Chọn nhân viên</option>
               {predictionOfficers.map((officer) => (
                 <option key={officer._id} value={officer._id}>
-                  {officer.name} - đang nhận: {officer.total_requests_count || 0}
+                  {officer.name} - đang nhận: {officer.total_requests_count || 0} - đang xử lý: {officer.in_progress_requests_count || 0}
                 </option>
               ))}
             </Form.Select>
           </div>
+          {activeTab === "assigned" && (
+            <div className="col-lg-6">
+              <Form.Label className="small mb-1">
+                Nhân viên đang nhận
+              </Form.Label>
+              <Form.Control
+                size="sm"
+                readOnly
+                name="current-officer"
+                value={currentOfficerDisplay || "Chưa có"}
+              >
+              </Form.Control>
+            </div>
+          )}
           <div className="col-lg-6 d-flex justify-content-end gap-2">
-            <Button
-              size="sm"
-              variant="success"
-              onClick={handleUsePrediction}
-              disabled={!hasPrediction || !selectedOfficer || predictionLoading}
-            >
-              {predictionLoading ? (
-                <Spinner animation="border" size="sm" />
-              ) : (
-                <BsCheckCircle className="me-1" />
-              )}
-              Dùng dự đoán
-            </Button>
-            <Button
-              size="sm"
-              variant="outline-primary"
-              onClick={() => setShowManual((prev) => !prev)}
-            >
-              <BsPersonPlus className="me-1" />
-              Tự phân nhân
-            </Button>
+            {renderButton(activeTab)}
           </div>
         </div>
       </div>
@@ -476,13 +544,13 @@ const RequestDetailModalBody = ({ requestId, onAssigned }) => {
               <div className="d-flex justify-content-between mb-2">
                 <span className="text-muted small">Nhãn</span>
                 <span className="fw-semibold">
-                  {toAsciiLabel(detail.label) || "Chưa gán"}
+                  {detail.label || "Chưa gán"}
                 </span>
               </div>
               <div className="d-flex justify-content-between">
                 <span className="text-muted small">Phòng ban</span>
                 <span className="fw-semibold">
-                  {detail.department_id || "Chưa gán"}
+                  {detail.department_id?.name || "Chưa gán"}
                 </span>
               </div>
             </Card.Body>

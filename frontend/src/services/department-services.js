@@ -8,17 +8,12 @@ export const departmentService = backendApi.injectEndpoints({
         method: "GET",
       }),
     }),
-    getOfficersByDepartment: build.query({
-      query: (departmentId) => ({
-        url: `/accounts/department/${departmentId}`,
-        method: "GET",
-      }),
-    }),
     getAllLabels: build.query({
       query: () => ({
         url: "/departments/labels",
         method: "GET",
       }),
+      providesTags: ["Labels"],
     }),
   }),
   overrideExisting: false,
@@ -26,6 +21,5 @@ export const departmentService = backendApi.injectEndpoints({
 
 export const {
   useGetDepartmentsQuery,
-  useGetOfficersByDepartmentQuery,
   useGetAllLabelsQuery,
 } = departmentService;

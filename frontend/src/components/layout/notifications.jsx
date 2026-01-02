@@ -17,7 +17,7 @@ import { socket } from "services/axios-config";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
-import { no } from "zod/v4/locales";
+import { useLazyGetConversationQuery } from "services/request-services";
 
 const MAX_DISPLAY = 10;
 
@@ -26,6 +26,7 @@ const Notifications = () => {
   const [showPopover, setShowPopover] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const [getConversation] = useLazyGetConversationQuery();
   const {
     data: unreadData,
     isSuccess: isUnreadSuccess,
@@ -148,16 +149,27 @@ const Notifications = () => {
   const handleMarkAsRead = async (notification) => {
     if (!notification?._id) return;
     try {
+      const requestId = notification?.entity_id;
       switch (notification.type) {
         case NOTIFICATION_TYPES.REQUEST_ASSIGNED:
-        case NOTIFICATION_TYPES.REQUEST_REPLY_STUDENT:
           // Chuyển trang đến request
-          const requestId = notification?.entity_id;
           if (!requestId) {
             toast.error("Không tìm thấy yêu cầu");
             break;
           }
           navigate(`/yeu-cau/${requestId}`, { replace: false });
+          break;
+        case NOTIFICATION_TYPES.REQUEST_REPLY_STUDENT:
+          // Chuyển trang đến request
+          if (!requestId) {
+            toast.error("Không tìm thấy yêu cầu");
+            break;
+          }
+          await getConversation(requestId);
+          navigate(`/yeu-cau/${requestId}`, {
+            replace: false,
+            state: { tabKey: "conversation" }
+          });
           break;
         case NOTIFICATION_TYPES.NEW_REQUEST:
           const qState = notification?.data?.request_id;

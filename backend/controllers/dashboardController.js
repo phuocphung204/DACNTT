@@ -2,6 +2,7 @@ import Request from "../models/Request.js";
 import Department from "../models/Department.js";
 import Account from "../models/Account.js";
 import mongoose from "mongoose";
+import { registerWatcherForAccount } from "./authController.js";
 
 const normalizeStartOfDay = (value) => {
   const d = new Date(value);

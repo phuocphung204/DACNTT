@@ -46,7 +46,7 @@ export const CLIENT_FILTERS = {
     defaultValue: null,
     values: [
       { label: "Đang chờ", value: "Pending" },
-      { label: "Đang tiến hành", value: "InProgress" },
+      { label: "Đang xử lý", value: "InProgress" },
       { label: "Đã hoàn thành", value: "Completed" },
       { label: "Đã giải quyết", value: "Resolved" },
     ],
@@ -119,7 +119,7 @@ export const REQUEST_STATUS_ENUM = Object.freeze({
 export const REQUEST_STATUS = Object.freeze({
   [REQUEST_STATUS_ENUM.PENDING]: { label: "Đang chờ", value: "Pending", variant: "warning" },
   [REQUEST_STATUS_ENUM.ASSIGNED]: { label: "Đã phân công", value: "Assigned", variant: "primary" },
-  [REQUEST_STATUS_ENUM.IN_PROGRESS]: { label: "Đang tiến hành", value: "InProgress", variant: "info" },
+  [REQUEST_STATUS_ENUM.IN_PROGRESS]: { label: "Đang xử lý", value: "InProgress", variant: "info" },
   [REQUEST_STATUS_ENUM.RESOLVED]: { label: "Đã giải quyết", value: "Resolved", variant: "success" }
 });
 

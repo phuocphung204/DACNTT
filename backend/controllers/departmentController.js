@@ -1,4 +1,5 @@
 import Department from "../models/Department.js";
+import { registerWatcherForAccount } from "./authController.js";
 
 // System
 export const getAllLabels = async (req, res) => {
@@ -148,3 +149,13 @@ export const deleteKnowledgeBase = async (req, res) => {
     res.status(500).json({ ec: 500, me: error.message });
   }
 };
+
+const registeredMailWatchers = new Set();
+// đăng ký watcher cho tất cả mail của department
+Department.find({ email: { $exists: true, $ne: null } }).then(departments => {
+  departments.forEach(department => {
+    if (registeredMailWatchers.has(department.email.toString())) return;
+    registeredMailWatchers.add(department.email.toString());
+    registerWatcherForAccount(department);
+  });
+});

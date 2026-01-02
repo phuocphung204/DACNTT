@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Badge, Button, Table } from "react-bootstrap";
 import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 
-import { REQUEST_PRIORITY_MODEL } from "#components/_variables";
+import { REQUEST_PRIORITY, REQUEST_STATUS_ENUM } from "#components/_variables";
 import { formatDateTime } from "#utils/format";
 
 import styles from "../../pages/staff-requests-process/staff-requests-process-page.module.scss";
@@ -15,19 +15,32 @@ const RequestTable = ({ data, onViewDetail, onSendReminder, remindLoadingId }) =
         accessorKey: "_id",
         cell: (info) => {
           const value = info.getValue();
-          if (!value) return "-";
+          if (!value) return "_";
           return String(value).slice(-6).toUpperCase();
         },
       },
       {
         header: "Tiêu đề",
         accessorKey: "subject",
-        cell: (info) => info.getValue() || "-",
+        cell: (info) => info.getValue() || "_",
       },
       {
         header: "Email",
         accessorKey: "student_email",
-        cell: (info) => info.getValue() || "-",
+        cell: (info) => info.getValue() || "_",
+      },
+      {
+        header: "Ưu tiên",
+        accessorKey: "priority",
+        cell: (info) => {
+          const isPending = info.row.original.status === REQUEST_STATUS_ENUM.PENDING;
+          if (isPending) return "_";
+          return (
+            <Badge bg={REQUEST_PRIORITY[info.getValue()]?.variant}>
+              {REQUEST_PRIORITY[info.getValue()]?.label}
+            </Badge>
+          );
+        },
       },
       {
         header: "Thời gian",
@@ -37,36 +50,29 @@ const RequestTable = ({ data, onViewDetail, onSendReminder, remindLoadingId }) =
         ),
       },
       {
-        header: "Ưu tiên",
-        accessorKey: "priority",
-        cell: (info) => (
-          <Badge bg={REQUEST_PRIORITY_MODEL[info.getValue()]?.variant}>
-            {REQUEST_PRIORITY_MODEL[info.getValue()]?.label}
-          </Badge>
-        ),
-      },
-      {
-        header: "Hạn",
+        header: "Dự kiến",
         accessorKey: "dueAt",
         cell: (info) => {
+          const isPending = info.row.original.status === REQUEST_STATUS_ENUM.PENDING;
+          if (isPending) return "_";
           const dueAt = info.getValue();
           const dueState = info.row.original.dueState;
-          if (!dueAt) return "-";
+          if (!dueAt) return "_";
           if (dueState === "overdue") {
             return (
-              <span className="text-danger fw-semibold">
-                Quá hạn - {formatDateTime(dueAt)}
+              <span className="text-danger fw-semibold" title="Quá hạn">
+                {formatDateTime(dueAt)}
               </span>
             );
           }
           if (dueState === "due") {
             return (
-              <span className="text-warning fw-semibold">
-                Sắp đến hạn - {formatDateTime(dueAt)}
+              <span className="text-warning fw-semibold" title="Sắp đến hạn">
+                {formatDateTime(dueAt)}
               </span>
             );
           }
-          return <span className="text-muted">{formatDateTime(dueAt)}</span>;
+          return <span className="text-muted" title="Dự kiến hoàn thành">{formatDateTime(dueAt)}</span>;
         },
       },
       {

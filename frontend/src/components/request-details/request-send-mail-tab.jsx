@@ -59,9 +59,7 @@ const RequestSendMailTab = ({ requestId, detail }) => {
   const {
     data: conversationData,
     isLoading: isConversationLoading,
-    isFetching: isConversationFetching,
     error: conversationError,
-    refetch: refetchConversation,
   } = useGetConversationQuery(requestId, {
     skip: !requestId,
   });
@@ -272,20 +270,6 @@ const RequestSendMailTab = ({ requestId, detail }) => {
 
   return (
     <div className="d-flex flex-column gap-3">
-      <div className="d-flex justify-content-end">
-        <Button
-          size="sm"
-          variant="outline-secondary"
-          onClick={refetchConversation}
-          disabled={isConversationFetching}
-        >
-          {isConversationFetching ? (
-            <Spinner animation="border" size="sm" />
-          ) : (
-            "Làm mới"
-          )}
-        </Button>
-      </div>
 
       {conversationErrorMessage && (
         <Alert variant="danger" className="mb-0">

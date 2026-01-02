@@ -29,6 +29,7 @@ const RequestConversationTab = ({ requestId, isActive }) => {
     data: conversationData,
     isLoading: isConversationLoading,
     error: conversationError,
+    // refetch: refetchConversation,
   } = useGetConversationQuery(requestId, {
     skip: !requestId,
   });
@@ -214,7 +215,7 @@ const RequestConversationTab = ({ requestId, isActive }) => {
               : null;
 
             const replyPreviewContent = replyToMessage?.content || null;
-            const keyId = `message-flow-${message?.message_id || message?._id || message?.google_message_id || index}`;
+            const keyId = `message-flow-${message?._id || message?.google_message_id || index}`;
             return (
               <div
                 key={keyId}

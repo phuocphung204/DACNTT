@@ -3,6 +3,7 @@ import RequestConversation from "../models/RequestConversation.js";
 import { sendMail, replyToMail } from "../services/send_email_smtp.js";
 import Account from "../models/Account.js";
 import { convert } from "html-to-text";
+import Department from "../models/Department.js";
 
 // [GET] /api/requests/:requestId/conversation
 export const getConversation = async (req, res) => {
@@ -67,8 +68,11 @@ export const sendMailToStudent = async (req, res) => {
     const safeSubject = subject || `Phản hồi về yêu cầu: ${request.subject}`;
     const studentEmail = request.student_email;
 
-    // 2. Lấy Refresh Token để gửi mail qua Gmail API
-    const refreshToken = req.account?.google_info?.gmail_modify?.refresh_token;
+    const department = await Department.findOne({ _id: request.department_id });
+    const departmentMail = department?.email || process.env.SYSTEM_MAIL_FOR_SEND;
+
+    // 2. Lấy Refresh Token
+    const refreshToken = department?.google_info?.gmail_modify?.refresh_token;
     if (!refreshToken) {
       return res.status(400).json({ ec: 3, em: "Bạn chưa liên kết tài khoản Google để thực hiện gửi mail." });
     }
@@ -77,7 +81,7 @@ export const sendMailToStudent = async (req, res) => {
     let sentData;
     try {
       sentData = await sendMail({
-        from: req.account.email,
+        from: departmentMail,
         refreshToken: refreshToken,
         to: studentEmail,
         subject: safeSubject,
@@ -172,11 +176,19 @@ export const replyToStudent = async (req, res) => {
     }
     const studentEmail = request.student_email;
 
+    const department = await Department.findOne({ _id: request.department_id });
+    const departmentMail = department?.email || process.env.SYSTEM_MAIL_FOR_SEND;
+    const departmentAccount = await Account.findOne({ email: departmentMail });
+    if (!departmentAccount) {
+      return res.status(500).json({ ec: 5, em: "Department account for sending mail not found." });
+    }
+
     // 2. Lấy Refresh Token
-    const refreshToken = req.account?.google_info?.gmail_modify?.refresh_token;
+    const refreshToken = departmentAccount?.google_info?.gmail_modify?.refresh_token;
     if (!refreshToken) {
       return res.status(400).json({ ec: 3, em: "Bạn chưa liên kết tài khoản Google để thực hiện gửi mail." });
     }
+
 
     // 3. Lấy thông tin Conversation
     let conversation = await RequestConversation.findOne({ request_id: requestId });
@@ -220,7 +232,7 @@ export const replyToStudent = async (req, res) => {
 
     // 5. Gửi mail
     const sentData = await replyToMail({
-      from: req.account.email,
+      from: departmentMail,
       refreshToken: refreshToken,
       to: studentEmail,
       subject: currentSubject,

@@ -9,10 +9,20 @@
 
   .card-body {
     background: transparent;
+    color: #fff;
   }
 
   .text-muted {
     color: color.scale(#ffffff, $alpha: -40%) !important;
+  }
+
+  h3,
+  h4,
+  .h3,
+  .h4,
+  .display-6,
+  .fw-semibold {
+    color: #fff;
   }
 }
 

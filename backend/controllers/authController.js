@@ -1,9 +1,12 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 
 import transporter from "../services/send_email_smtp.js";
 import Account from "../models/Account.js";
 import { createAuthClient, startWatching } from "../services/gmail-chat.js";
+
+dotenv.config();
 
 const generateResetToken = (accountId) => {
 	return jwt.sign(
@@ -167,8 +170,8 @@ const handleResetPassword = async (req, res) => {
 	}
 };
 
-const registerWatcherForAccount = async (account) => {
-
+export const registerWatcherForAccount = async (account) => {
+	console.log("Registering watcher for account:", account.email);
 	const watchGmailMailbox = async () => {
 		const refresh_token = account.google_info.gmail_modify?.refresh_token;
 		if (!refresh_token) {
@@ -227,7 +230,7 @@ const handleLogin = async (req, res) => {
 		const account = await Account.findOne({ email: email });
 
 		if (account && (await bcrypt.compare(password, account.password))) {
-			registerWatcherForAccount(account); // khởi động đăng ký watcher không chờ kết quả
+			// registerWatcherForAccount(account); // khởi động đăng ký watcher không chờ kết quả
 			res.status(200).json({
 				ec: 0,
 				em: 'Đăng nhập thành công',

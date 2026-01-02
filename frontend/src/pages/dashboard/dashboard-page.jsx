@@ -102,15 +102,14 @@ const Legend = ({ labels, colors }) => (
 );
 
 const DashboardPage = () => {
-  const defaultFilters = useMemo(() => getInitialFilters(), []);
-
+  const [scope, setScope] = useState("overall"); // overall | department
   const [filters, setFilters] = useState(() => getInitialFilters());
   const [appliedFilters, setAppliedFilters] = useState(() => getInitialFilters());
 
   const timeParams = useMemo(() => buildQueryParams(appliedFilters), [appliedFilters]);
 
   const { data: advancedResponse, isFetching: loadingAdvanced, refetch: refetchAdvanced } =
-    useGetAdvancedDashboardQuery(timeParams);
+    useGetAdvancedDashboardQuery(timeParams, { skip: scope !== "overall" });
 
   const {
     data: departmentResponse,
@@ -118,7 +117,7 @@ const DashboardPage = () => {
     refetch: refetchDepartment,
   } = useGetDepartmentDashboardQuery(
     { departmentId: appliedFilters.departmentId, params: timeParams },
-    { skip: !appliedFilters.departmentId }
+    { skip: scope !== "department" || !appliedFilters.departmentId }
   );
 
   const { data: departmentsResponse, isFetching: loadingDepartments } = useGetDepartmentsQuery();
@@ -131,14 +130,16 @@ const DashboardPage = () => {
   const advanced = advancedResponse?.dt || {};
   const department = departmentResponse?.dt || {};
 
+  const isOverall = scope === "overall";
+  const isDepartment = scope === "department";
   const isLoading = loadingAdvanced || (appliedFilters.departmentId ? loadingDepartment : false);
 
   const labels = useMemo(() => {
     const set = new Set();
-    (advanced.by_label || []).forEach((item) => item?.label && set.add(item.label));
-    (department.by_label || []).forEach((item) => item?.label && set.add(item.label));
+    const source = isOverall ? advanced.by_label : department.by_label;
+    (source || []).forEach((item) => item?.label && set.add(item.label));
     return Array.from(set);
-  }, [advanced.by_label, department.by_label]);
+  }, [advanced.by_label, department.by_label, isOverall]);
 
   const labelColors = useMemo(() => {
     const map = {};
@@ -174,31 +175,38 @@ const DashboardPage = () => {
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleApplyFilter = (event) => {
-    event.preventDefault();
-    setAppliedFilters(filters);
-  };
-
-  const handleReset = () => {
-    const freshFilters = getInitialFilters();
-    setFilters(freshFilters);
-    setAppliedFilters(freshFilters);
-  };
-
-  const handleRefresh = () => {
-    refetchAdvanced();
-    if (appliedFilters.departmentId) {
-      refetchDepartment();
+  const handleScopeChange = (event) => {
+    const nextScope = event.target.value;
+    setScope(nextScope);
+    if (nextScope === "overall") {
+      setFilters((prev) => ({ ...prev, departmentId: "" }));
     }
   };
 
-  const statusStats = advanced.by_status || [];
-  const labelStats = advanced.by_label || [];
+  const handleApplyFilter = (event) => {
+    event.preventDefault();
+    if (scope === "overall") {
+      setAppliedFilters({ ...filters, departmentId: "" });
+    } else {
+      setAppliedFilters(filters);
+    }
+  };
+
+  const handleReset = () => {
+    const fresh = getInitialFilters();
+    setFilters(fresh);
+    setAppliedFilters(fresh);
+  };
+
+  const handleRefresh = () => {
+    if (isOverall) refetchAdvanced();
+    if (isDepartment && appliedFilters.departmentId) refetchDepartment();
+  };
+
+  const statusStats = isOverall ? (advanced.by_status || []) : (department.by_status || []);
+  const labelStats = isOverall ? (advanced.by_label || []) : (department.by_label || []);
   const timelineGlobal = advanced.timeline_label || [];
   const timelineDepartment = department.timeline_label || [];
-
-  const totalStatusCount = statusStats.reduce((sum, item) => sum + (item?.count || 0), 0);
-  const totalLabelCount = labelStats.reduce((sum, item) => sum + (item?.count || 0), 0);
 
   const statusChartData = useMemo(() => ({
     labels: statusStats.map((item) => REQUEST_STATUS[item.status]?.label || item.status),
@@ -241,7 +249,7 @@ const DashboardPage = () => {
 
   const labelChartOptions = statusChartOptions;
 
-  const buildTimelineChartData = (timeline) => {
+  const buildTimelineLineData = (timeline) => {
     const timelineLabels = timeline.map((item) => formatTimelineLabel(item));
     const datasets = labels.map((label) => ({
       label,
@@ -256,7 +264,20 @@ const DashboardPage = () => {
     return { labels: timelineLabels, datasets };
   };
 
-  const timelineOptions = useMemo(() => ({
+  const buildTimelineStackedBarData = (timeline) => {
+    const timelineLabels = timeline.map((item) => formatTimelineLabel(item));
+    const datasets = labels.map((label) => ({
+      label,
+      data: timeline.map((item) => (item.labels?.[label] || 0)),
+      backgroundColor: labelColorsHex[label],
+      borderColor: labelColorsHex[label],
+      borderWidth: 0,
+      borderRadius: 4,
+    })).filter((ds) => ds.data.some((v) => v > 0));
+    return { labels: timelineLabels, datasets };
+  };
+
+  const timelineLineOptions = useMemo(() => ({
     responsive: true,
     interaction: { mode: "nearest", intersect: false },
     plugins: {
@@ -272,21 +293,48 @@ const DashboardPage = () => {
     },
   }), []);
 
-  const renderTimeline = (timeline, title) => {
-    const chartData = buildTimelineChartData(timeline);
+  const timelineStackedOptions = useMemo(() => ({
+    responsive: true,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { position: "bottom" },
+      tooltip: {
+        callbacks: {
+          label: (context) => `${context.dataset.label}: ${numberFormat(context.parsed.y || 0)} yêu cầu`,
+        },
+      },
+    },
+    scales: {
+      x: { stacked: true },
+      y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
+    },
+  }), []);
+
+  const renderTimeline = (timeline, title, mode = "line") => {
+    const chartData = mode === "stacked"
+      ? buildTimelineStackedBarData(timeline)
+      : buildTimelineLineData(timeline);
+
+    console.log("Rendering timeline:", { timeline, chartData, mode });
+
+    const options = mode === "stacked" ? timelineStackedOptions : timelineLineOptions;
+    const legendLabels = chartData.datasets.map((ds) => ds.label);
+
     return (
       <Card className="h-100">
         <Card.Header className="d-flex align-items-center justify-content-between">
           <div className="fw-semibold">{title}</div>
-          <Legend labels={labels} colors={labelColors} />
+          <Legend labels={legendLabels} colors={labelColors} />
         </Card.Header>
         <Card.Body>
           {timeline.length === 0 || chartData.datasets.length === 0 ? (
             <Alert variant="secondary" className="mb-0">
               Chưa có dữ liệu cho khoảng thời gian đã chọn.
             </Alert>
+          ) : mode === "stacked" ? (
+            <Bar data={chartData} options={options} height={200} />
           ) : (
-            <Line data={chartData} options={timelineOptions} height={180} />
+            <Line data={chartData} options={options} height={180} />
           )}
         </Card.Body>
       </Card>
@@ -300,15 +348,36 @@ const DashboardPage = () => {
           <h4 className="mb-1">Bảng điều khiển</h4>
           <div className="text-muted">Theo dõi tiến độ xử lý yêu cầu theo thời gian</div>
         </div>
-        <button className="border-0 fs-4 bg-transparent">
-          {isLoading ? <Spinner animation="border" size="sm" /> : <BsArrowRepeat title="Làm mới" onClick={handleRefresh} />}
-        </button>
+        <Button variant="outline-secondary" onClick={handleRefresh} disabled={isLoading}>
+          {isLoading ? <Spinner animation="border" size="sm" /> : <BsArrowRepeat className="me-2" />} Tải lại
+        </Button>
       </div>
 
       <Card className="mb-3">
         <Card.Header className="fw-semibold">Bộ lọc thời gian</Card.Header>
         <Card.Body>
           <Form onSubmit={handleApplyFilter} className="row g-3 align-items-end">
+            <Col md={3} sm={6}>
+              <Form.Label>Chế độ xem</Form.Label>
+              <div className="d-flex gap-3">
+                <Form.Check
+                  type="radio"
+                  id="scope-overall"
+                  label="Tổng quát"
+                  value="overall"
+                  checked={scope === "overall"}
+                  onChange={handleScopeChange}
+                />
+                <Form.Check
+                  type="radio"
+                  id="scope-department"
+                  label="Theo phòng ban"
+                  value="department"
+                  checked={scope === "department"}
+                  onChange={handleScopeChange}
+                />
+              </div>
+            </Col>
             <Col md={2} sm={6}>
               <Form.Label>Chế độ</Form.Label>
               <Form.Select name="mode" value={filters.mode} onChange={handleInputChange}>
@@ -396,7 +465,7 @@ const DashboardPage = () => {
                 name="departmentId"
                 value={filters.departmentId}
                 onChange={handleInputChange}
-                disabled={loadingDepartments}
+                disabled={loadingDepartments || scope === "overall"}
               >
                 <option value="">Tất cả (toàn hệ thống)</option>
                 {departments.map((dept) => (
@@ -413,57 +482,47 @@ const DashboardPage = () => {
         </Card.Body>
       </Card>
 
-      <Row className="g-3 mb-3">
-        <Col md={3} sm={6}>
-          <Card className={`${styles.statCard} ${styles.primary} h-100 text-white`}>
-            <Card.Body>
-              <div className="small">Tổng yêu cầu</div>
-              <div className="display-6 fw-semibold">{numberFormat(advanced.total_requests || 0)}</div>
-              <div className="small">Trong phạm vi lọc</div>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col md={3} sm={6}>
-          <Card className={`${styles.statCard} ${styles.info} h-100 text-white`}>
-            <Card.Body>
-              <div className="small">Trạng thái phổ biến</div>
-              <div className="h4 fw-semibold mb-1">
-                {statusStats?.[0]?.status
-                  ? REQUEST_STATUS[statusStats[0].status]?.label || statusStats[0].status
-                  : "Chưa có"}
-              </div>
-              <div className="small">
-                {statusStats?.[0]?.count ? `${numberFormat(statusStats[0].count)} yêu cầu` : "Không có dữ liệu"}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col md={3} sm={6}>
-          <Card className={`${styles.statCard} ${styles.success} h-100 text-white`}>
-            <Card.Body>
-              <div className="small">Số nhãn đang theo dõi</div>
-              <div className="display-6 fw-semibold">{labels.length}</div>
-              <div className="small">Dựa trên dữ liệu trả về</div>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        {appliedFilters.departmentId && (
-          <Col md={3} sm={6}>
-            <Card className={`${styles.statCard} ${styles.warning} h-100`}>
+      {isOverall && (
+        <Row className="g-3 mb-3">
+          <Col md={4} sm={6}>
+            <Card className={`${styles.statCard} ${styles.primary} h-100`}>
               <Card.Body>
-                <div className="text-muted small">Yêu cầu trễ hạn</div>
-                <div className="display-6 fw-semibold">{numberFormat(department.total_overdue_requests || 0)}</div>
-                <div className="text-muted small">Riêng phòng ban đã chọn</div>
+                <div className="text-muted small">Tổng yêu cầu</div>
+                <div className="display-6 fw-semibold">{numberFormat(advanced.total_requests || 0)}</div>
+                <div className="text-muted small">Trong phạm vi lọc</div>
               </Card.Body>
             </Card>
           </Col>
-        )}
-      </Row>
 
-      {appliedFilters.departmentId && (
+          <Col md={4} sm={6}>
+            <Card className={`${styles.statCard} ${styles.info} h-100`}>
+              <Card.Body>
+                <div className="text-muted small">Trạng thái phổ biến</div>
+                <div className="h4 fw-semibold mb-1">
+                  {statusStats?.[0]?.status
+                    ? REQUEST_STATUS[statusStats[0].status]?.label || statusStats[0].status
+                    : "Chưa có"}
+                </div>
+                <div className="text-muted small">
+                  {statusStats?.[0]?.count ? `${numberFormat(statusStats[0].count)} yêu cầu` : "Không có dữ liệu"}
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+
+          <Col md={4} sm={6}>
+            <Card className={`${styles.statCard} ${styles.success} h-100`}>
+              <Card.Body>
+                <div className="text-muted small">Số nhãn đang theo dõi</div>
+                <div className="display-6 fw-semibold">{labels.length}</div>
+                <div className="text-muted small">Dựa trên dữ liệu trả về</div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      )}
+
+      {isDepartment && appliedFilters.departmentId && (
         <Row className="g-3 mb-3">
           <Col md={3} sm={6}>
             <Card className={`${styles.statCard} ${styles.primary} h-100`}>
@@ -471,6 +530,15 @@ const DashboardPage = () => {
                 <div className="text-muted small">Tổng yêu cầu (phòng ban)</div>
                 <div className="h3 fw-semibold">{numberFormat(department.total_requests || 0)}</div>
                 <div className="text-muted small">Bao gồm tất cả trạng thái</div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={3} sm={6}>
+            <Card className={`${styles.statCard} ${styles.warning} h-100`}>
+              <Card.Body>
+                <div className="text-muted small">Yêu cầu trễ hạn</div>
+                <div className="display-6 fw-semibold">{numberFormat(department.total_overdue_requests || 0)}</div>
+                <div className="text-muted small">Riêng phòng ban đã chọn</div>
               </Card.Body>
             </Card>
           </Col>
@@ -483,7 +551,7 @@ const DashboardPage = () => {
               </Card.Body>
             </Card>
           </Col>
-          <Col md={6} sm={12}>
+          <Col md={3} sm={6}>
             <Card className={`${styles.statCard} ${styles.info} h-100`}>
               <Card.Body>
                 <div className="text-muted small">Nhãn nhiều nhất (phòng ban)</div>
@@ -502,84 +570,140 @@ const DashboardPage = () => {
       )}
 
       <Row className="g-3 mb-3">
-        <Col lg={6}>
-          <Card className="h-100">
-            <Card.Header className="fw-semibold">Phân bố trạng thái</Card.Header>
-            <Card.Body>
-              {loadingAdvanced ? (
-                <div className="text-center py-4"><Spinner animation="border" /></div>
-              ) : (
-                <div className="d-flex flex-column gap-3">
-                  <Bar data={statusChartData} options={statusChartOptions} height={180} />
-                  <div className="d-flex flex-wrap gap-2 small">
-                    {statusStats.length === 0 && <span className="text-muted">Chưa có dữ liệu.</span>}
-                    {statusStats.map((item) => (
-                      <Badge key={item.status} bg={REQUEST_STATUS[item.status]?.variant || "secondary"}>
-                        {REQUEST_STATUS[item.status]?.label || item.status}: {numberFormat(item.count)}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
+        {isOverall && (
+          <>
+            <Col lg={6}>
+              <Card className="h-100">
+                <Card.Header className="fw-semibold">Phân bố trạng thái</Card.Header>
+                <Card.Body>
+                  {loadingAdvanced ? (
+                    <div className="text-center py-4"><Spinner animation="border" /></div>
+                  ) : (
+                    <div className="d-flex flex-column gap-3">
+                      <Bar data={statusChartData} options={statusChartOptions} height={180} />
+                      <div className="d-flex flex-wrap gap-2 small">
+                        {statusStats.length === 0 && <span className="text-muted">Chưa có dữ liệu.</span>}
+                        {statusStats.map((item) => (
+                          <Badge key={item.status} bg={REQUEST_STATUS[item.status]?.variant || "secondary"}>
+                            {REQUEST_STATUS[item.status]?.label || item.status}: {numberFormat(item.count)}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
 
-        <Col lg={6}>
-          <Card className="h-100">
-            <Card.Header className="fw-semibold">Phân bố nhãn</Card.Header>
-            <Card.Body>
-              {loadingAdvanced ? (
-                <div className="text-center py-4"><Spinner animation="border" /></div>
-              ) : (
-                <div className="d-flex flex-column gap-3">
-                  <Bar data={labelChartData} options={labelChartOptions} height={180} />
-                  <div className="d-flex flex-wrap gap-2 small">
-                    {labelStats.length === 0 && <span className="text-muted">Chưa có dữ liệu.</span>}
-                    {labelStats.map((item) => (
-                      <Badge key={item.label} bg={labelColors[item.label] || "secondary"}>
-                        {item.label}: {numberFormat(item.count)}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
+            <Col lg={6}>
+              <Card className="h-100">
+                <Card.Header className="fw-semibold">Phân bố nhãn</Card.Header>
+                <Card.Body>
+                  {loadingAdvanced ? (
+                    <div className="text-center py-4"><Spinner animation="border" /></div>
+                  ) : (
+                    <div className="d-flex flex-column gap-3">
+                      <Bar data={labelChartData} options={labelChartOptions} height={180} />
+                      <div className="d-flex flex-wrap gap-2 small">
+                        {labelStats.length === 0 && <span className="text-muted">Chưa có dữ liệu.</span>}
+                        {labelStats.map((item) => (
+                          <Badge key={item.label} bg={labelColors[item.label] || "secondary"}>
+                            {item.label}: {numberFormat(item.count)}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
+          </>
+        )}
+
+        {isDepartment && (
+          <>
+            <Col lg={6}>
+              <Card className="h-100">
+                <Card.Header className="fw-semibold">Phân bố trạng thái (phòng ban)</Card.Header>
+                <Card.Body>
+                  {loadingDepartment ? (
+                    <div className="text-center py-4"><Spinner animation="border" /></div>
+                  ) : (
+                    <div className="d-flex flex-column gap-3">
+                      <Bar data={statusChartData} options={statusChartOptions} height={180} />
+                      <div className="d-flex flex-wrap gap-2 small">
+                        {statusStats.length === 0 && <span className="text-muted">Chưa có dữ liệu.</span>}
+                        {statusStats.map((item) => (
+                          <Badge key={item.status} bg={REQUEST_STATUS[item.status]?.variant || "secondary"}>
+                            {REQUEST_STATUS[item.status]?.label || item.status}: {numberFormat(item.count)}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
+
+            <Col lg={6}>
+              <Card className="h-100">
+                <Card.Header className="fw-semibold">Phân bố nhãn (phòng ban)</Card.Header>
+                <Card.Body>
+                  {loadingDepartment ? (
+                    <div className="text-center py-4"><Spinner animation="border" /></div>
+                  ) : (
+                    <div className="d-flex flex-column gap-3">
+                      <Bar data={labelChartData} options={labelChartOptions} height={180} />
+                      <div className="d-flex flex-wrap gap-2 small">
+                        {labelStats.length === 0 && <span className="text-muted">Chưa có dữ liệu.</span>}
+                        {labelStats.map((item) => (
+                          <Badge key={item.label} bg={labelColors[item.label] || "secondary"}>
+                            {item.label}: {numberFormat(item.count)}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
+          </>
+        )}
       </Row>
 
       <Row className="g-3 mb-3">
-        <Col lg={6}>
-          {loadingAdvanced ? (
-            <Card className="h-100">
-              <Card.Body className="text-center py-4"><Spinner animation="border" /></Card.Body>
-            </Card>
-          ) : (
-            renderTimeline(timelineGlobal, "Nhãn theo thời gian (toàn hệ thống)")
-          )}
-        </Col>
-
-        <Col lg={6}>
-          {appliedFilters.departmentId ? (
-            loadingDepartment ? (
+        {isOverall && (
+          <Col lg={12}>
+            {loadingAdvanced ? (
               <Card className="h-100">
                 <Card.Body className="text-center py-4"><Spinner animation="border" /></Card.Body>
               </Card>
             ) : (
-              renderTimeline(timelineDepartment, "Nhãn theo thời gian (phòng ban)")
-            )
-          ) : (
-            <Card className="h-100">
-              <Card.Body className="text-center py-4 text-muted">
-                Chọn một phòng ban để xem biểu đồ riêng.
-              </Card.Body>
-            </Card>
-          )}
-        </Col>
+              renderTimeline(timelineGlobal, "Nhãn theo thời gian (toàn hệ thống)", "line")
+            )}
+          </Col>
+        )}
+
+        {isDepartment && (
+          <Col lg={12}>
+            {scope === "department" && !appliedFilters.departmentId ? (
+              <Card className="h-100">
+                <Card.Body className="text-center py-4 text-muted">
+                  Chọn một phòng ban để xem biểu đồ.
+                </Card.Body>
+              </Card>
+            ) : loadingDepartment ? (
+              <Card className="h-100">
+                <Card.Body className="text-center py-4"><Spinner animation="border" /></Card.Body>
+              </Card>
+            ) : (
+              renderTimeline(timelineDepartment, "Nhãn theo thời gian (phòng ban)", "stacked")
+            )}
+          </Col>
+        )}
       </Row>
 
-      {appliedFilters.departmentId && (
+      {isDepartment && appliedFilters.departmentId && (
         <Card className="mb-3">
           <Card.Header className="fw-semibold">Yêu cầu trễ hạn theo người xử lý</Card.Header>
           <Card.Body>

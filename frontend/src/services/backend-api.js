@@ -12,6 +12,11 @@ export const backendApi = createApi({
     "User",
     "Account",
     "Department",
+    "Officers",
+    "Labels",
+    "KnowledgeBase",
+    "Request",
+    "RequestConversation",
   ],
   endpoints: () => ({}),
 })
