@@ -208,6 +208,22 @@ const DashboardPage = () => {
   const timelineGlobal = advanced.timeline_label || [];
   const timelineDepartment = department.timeline_label || [];
 
+  const departmentStackedData = useMemo(() => {
+    const departmentsData = advanced.by_department || [];
+    const deptLabels = departmentsData.map((item) => item.department_name || "Chưa rõ");
+    const datasets = labels
+      .map((label) => ({
+        label,
+        data: departmentsData.map((item) => item.labels?.[label] || 0),
+        backgroundColor: labelColorsHex[label],
+        borderColor: labelColorsHex[label],
+        borderWidth: 0,
+        borderRadius: 4,
+      }))
+      .filter((ds) => ds.data.some((v) => v > 0));
+    return { labels: deptLabels, datasets };
+  }, [advanced.by_department, labels, labelColorsHex]);
+
   const statusChartData = useMemo(() => ({
     labels: statusStats.map((item) => REQUEST_STATUS[item.status]?.label || item.status),
     datasets: [
@@ -300,7 +316,11 @@ const DashboardPage = () => {
       legend: { position: "bottom" },
       tooltip: {
         callbacks: {
-          label: (context) => `${context.dataset.label}: ${numberFormat(context.parsed.y || 0)} yêu cầu`,
+          label: (context) => {
+            const value = context.parsed.y || 0;
+            if (!value) return null; // ẩn nhãn giá trị 0 khi hover
+            return `${context.dataset.label}: ${numberFormat(value)} yêu cầu`;
+          },
         },
       },
     },
@@ -674,13 +694,21 @@ const DashboardPage = () => {
       <Row className="g-3 mb-3">
         {isOverall && (
           <Col lg={12}>
-            {loadingAdvanced ? (
-              <Card className="h-100">
-                <Card.Body className="text-center py-4"><Spinner animation="border" /></Card.Body>
-              </Card>
-            ) : (
-              renderTimeline(timelineGlobal, "Nhãn theo thời gian (toàn hệ thống)", "line")
-            )}
+            <Card className="h-100">
+              <Card.Header className="d-flex align-items-center justify-content-between">
+                <div className="fw-semibold">Phân bố nhãn theo phòng ban (toàn hệ thống)</div>
+                <Legend labels={departmentStackedData.datasets.map((ds) => ds.label)} colors={labelColors} />
+              </Card.Header>
+              <Card.Body>
+                {loadingAdvanced ? (
+                  <div className="text-center py-4"><Spinner animation="border" /></div>
+                ) : departmentStackedData.labels.length === 0 || departmentStackedData.datasets.length === 0 ? (
+                  <Alert variant="secondary" className="mb-0">Chưa có dữ liệu phòng ban.</Alert>
+                ) : (
+                  <Bar data={departmentStackedData} options={timelineStackedOptions} height={200} />
+                )}
+              </Card.Body>
+            </Card>
           </Col>
         )}
 

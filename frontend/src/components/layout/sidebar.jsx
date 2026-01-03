@@ -31,7 +31,7 @@ const NAV_ITEMS = [
   //     { id: "layout-custom", label: "Layout + Custom Area", to: "#" },
   //   ],
   // },
-  { id: "manage-requests", label: "Quản lý yêu cầu", icon: "bi-folder-check", to: "/quan-ly-yeu-cau" },
+  // { id: "manage-requests", label: "Quản lý yêu cầu", icon: "bi-folder-check", to: "/quan-ly-yeu-cau" },
   // { id: "socket-io-setup", label: "Socket.io Setup", icon: "bi-plug", to: "/socket-io-setup" },
   { id: "staff-requests-process", label: "Xử lý yêu cầu", icon: "bi-people", to: "/xu-ly-yeu-cau", allowRoles: [ACCOUNT_ROLES_ENUM.STAFF] },
   { id: "officer-requests-process", label: "Xử lý yêu cầu", icon: "bi-people", to: "/xu-ly-yeu-cau", allowRoles: [ACCOUNT_ROLES_ENUM.OFFICER] },

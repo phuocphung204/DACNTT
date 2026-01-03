@@ -165,6 +165,13 @@ function buildTimelineSkeleton(
       const item = timelineRaw.find(t => t.day === day);
       timeline.push(item || makeDefault("day", day));
     }
+  } else {
+    // Mặc định (không tham số thời gian) vẫn trả về khung 12 tháng theo năm đã suy ra
+    const yearMonths = 12;
+    for (let m = 1; m <= yearMonths; m++) {
+      const item = timelineRaw.find(t => t.month === m);
+      timeline.push(item || makeDefault("month", m));
+    }
   }
 
   return timeline;
@@ -296,6 +303,10 @@ export const getDashboardWithDepartmentID = async (req, res) => {
       startDate,
       endDate
     });
+    const timelineGroupIdForSecondStage = Object.keys(timelineGroup._id).reduce((acc, key) => {
+      acc[key] = `$_id.${key}`; // reuse computed key from first group result
+      return acc;
+    }, {});
 
     const stats = await Request.aggregate([
       { $match: { ...timeQuery, department_id: departmentObjectId } },
@@ -363,7 +374,7 @@ export const getDashboardWithDepartmentID = async (req, res) => {
             },
             {
               $group: {
-                _id: timelineGroup._id,
+                _id: timelineGroupIdForSecondStage,
                 labels: {
                   $push: { k: "$_id.label", v: "$count" }
                 },
@@ -373,10 +384,7 @@ export const getDashboardWithDepartmentID = async (req, res) => {
             {
               $project: {
                 _id: 0,
-                ...Object.keys(timelineGroup._id).reduce((acc, k) => {
-                  acc[k] = `$_id.${k}`;
-                  return acc;
-                }, {}),
+                ...timelineGroupIdForSecondStage,
                 labels: { $arrayToObject: "$labels" },
                 total: 1
               }
@@ -415,7 +423,7 @@ export const getDashboardWithDepartmentID = async (req, res) => {
 
     return res.json({
       ec: 200,
-      me: "Lấy dashboard theo phòng ban thành công",
+      em: "Lấy dashboard theo phòng ban thành công",
       dt: {
         total_requests: result.total_requests?.[0]?.count || 0,
         total_overdue_requests: result.total_overdue_requests?.[0]?.count || 0,
@@ -427,6 +435,6 @@ export const getDashboardWithDepartmentID = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ ec: 500, me: error.message });
+    res.status(500).json({ ec: 500, em: error.message });
   }
 };
