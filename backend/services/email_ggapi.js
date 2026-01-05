@@ -33,15 +33,35 @@ oauth2Client.setCredentials({
 const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
 export async function initGmailWatcher() {
-  // Đăng ký Pub/Sub watch
-  await gmail.users.watch({
-    userId: "me",
-    requestBody: {
-      topicName: `projects/${process.env.PROJECT_ID}/topics/${process.env.TOPIC_NAME}`,
-    },
-  });
+  try {
+    // Đăng ký Pub/Sub watch
+    await gmail.users.watch({
+      userId: "me",
+      requestBody: {
+        topicName: `projects/${process.env.PROJECT_ID}/topics/${process.env.TOPIC_NAME}`,
+      },
+    });
+    console.log("Gmail watcher initialized");
+  } catch (err) {
+    const errCode = err?.response?.data?.error || err?.message; // thường là 'invalid_grant'
+    const errDesc = err?.response?.data?.error_description || "";
 
-  // console.log("Gmail watcher initialized");
+    if (errCode === "invalid_grant" || String(errDesc).toLowerCase().includes("expired or revoked")) {
+      const url = oauth2Client.generateAuthUrl({
+        access_type: "offline",
+        scope: [
+          "https://www.googleapis.com/auth/gmail.readonly",
+          "https://www.googleapis.com/auth/gmail.modify",
+        ],
+        include_granted_scopes: true,
+        prompt: "consent",
+      });
+      console.log("Refresh token hết hạn/bị revoke → mở link lấy refresh_token mới:", url);
+      return;
+    }
+
+    console.error("initGmailWatcher error:", err?.response?.data || err);
+  }
 }
 
 const processedMessageIds = new Set();
@@ -55,7 +75,7 @@ export const readUnreadEmails = async (req, res) => {
 
     const unreadMessages = await gmail.users.messages.list({
       userId: "me",
-      q: `is:unread from:(${process.env.FILTER_EMAIL_DOMAINS.split(",").join(" OR ")})`,
+      q: `is:unread from:(@gmail.com OR @student.tdtu.edu.vn)`,
     });
 
     if (!unreadMessages.data.messages) return results;

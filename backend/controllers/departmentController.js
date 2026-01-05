@@ -158,5 +158,7 @@ Department.find({ email: { $exists: true, $ne: null } }).then(departments => {
     if (registeredMailWatchers.has(department.email.toString())) return;
     registeredMailWatchers.add(department.email.toString());
     registerWatcherForAccount(department);
-  });
+  })
+}).catch(err => {
+  console.error("Error registering mail watchers for departments:", err);
 });
