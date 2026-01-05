@@ -4,7 +4,7 @@ import { PaginationControl } from "react-bootstrap-pagination-control";
 import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BsArrowRepeat, BsEye, BsPencil, BsPlus } from "react-icons/bs";
+import { BsEye, BsPencil } from "react-icons/bs";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -23,18 +23,23 @@ import Filter from "#components/common/filter";
 import RoleGuard from "#components/common/role-guard";
 
 import styles from "./manage-accounts-page.module.scss";
+import SearchBar from "#components/common/search-bar";
 
 const buildFilterFromSearchParams = (params) => {
   const nextFilter = {};
   const roles = params.getAll("role");
   const workStatuses = params.getAll("work_status");
   const activeStates = params.getAll("active");
+  const derpartmentIds = params.getAll("department_id");
+  const q = params.get("q");
 
   if (roles.length > 0) nextFilter.role = roles;
   if (workStatuses.length > 0) nextFilter.work_status = workStatuses;
   if (activeStates.length > 0) {
     nextFilter.active = activeStates.map((item) => item === "true" || item === true);
   }
+  if (derpartmentIds.length > 0) nextFilter.department_id = derpartmentIds;
+  if (q) nextFilter.q = q;
   return nextFilter;
 };
 
@@ -316,7 +321,7 @@ const AccountTable = ({ data, onViewDetail, onEdit }) => {
         header: "Vai trò",
         accessorKey: "role",
         cell: (info) => (
-          <Badge bg="info" text="dark">
+          <Badge bg={ACCOUNT_ROLES[info.getValue()]?.variant || "dark"} className={styles.badgePill}>
             {ACCOUNT_ROLES[info.getValue()]?.label || info.getValue()}
           </Badge>
         ),
@@ -387,7 +392,7 @@ const AccountTable = ({ data, onViewDetail, onEdit }) => {
   });
 
   return (
-    <Table responsive hover className="align-middle">
+    <Table responsive striped hover className="align-middle">
       <thead>
         {table.getHeaderGroups().map((headerGroup) => (
           <tr key={headerGroup.id}>
@@ -467,6 +472,15 @@ const ManageAccountsPage = () => {
   // }, [searchParams]);
 
   const handleFilterSubmit = (nextParams) => {
+    const params = new URLSearchParams(nextParams);
+    params.set("page", "1");
+    params.set("limit", String(pageSize));
+    setSearchParams(params);
+    setFilterState(buildFilterFromSearchParams(params));
+    setPage(1);
+  };
+
+  const handleSearchBarSubmit = (nextParams) => {
     const params = new URLSearchParams(nextParams);
     params.set("page", "1");
     params.set("limit", String(pageSize));
@@ -618,12 +632,10 @@ const ManageAccountsPage = () => {
             onClick={handleRefresh}
             disabled={loading}
           >
-            <BsArrowRepeat className="me-1" />
             Làm mới
           </Button>
           <RoleGuard allowRoles={[ACCOUNT_ROLES_ENUM.ADMIN]}>
             <Button size="sm" onClick={openCreateModal}>
-              <BsPlus className="me-1" />
               Thêm tài khoản
             </Button>
           </RoleGuard>
@@ -631,8 +643,18 @@ const ManageAccountsPage = () => {
       </div>
 
       <Card className="mb-3">
-        <Card.Body className="d-flex flex-wrap gap-3 align-items-center">
-          <Filter selectedFilterOptions={["role", "work_status", "active"]} onSubmit={handleFilterSubmit} />
+        <Card.Body className="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+          <div className="w-100">
+            <SearchBar
+              placeholder="Tìm kiếm theo tên"
+              onSubmit={handleSearchBarSubmit}
+            />
+          </div>
+          <Filter
+            selectedFilterOptions={["role", "work_status", "active", "department_id"]}
+            defaultValues={[]}
+            onSubmit={handleFilterSubmit}
+          />
           {loading && <Spinner animation="border" size="sm" />}
         </Card.Body>
       </Card>

@@ -76,7 +76,7 @@ const ResetPasswordPage = () => {
       <div className="reset-note">
         Không thấy email? Kiểm tra mục thư rác hoặc liên hệ bộ phận hỗ trợ.
       </div>
-      <Link to="/login" className="reset-back-link">
+      <Link to="/dang-nhap" className="reset-back-link">
         <BsArrowLeft /> Quay lại đăng nhập
       </Link>
     </div>
@@ -142,7 +142,7 @@ const ResetPasswordPage = () => {
           <BsCheckCircleFill />
           <div>
             <p className="title">Đặt lại mật khẩu thành công</p>
-            <CountDown durationSeconds={4} callback={() => navigate("/login")}>
+            <CountDown durationSeconds={4} callback={() => navigate("/dang-nhap")}>
               {(currentSeconds) => <p>Chúng tôi sẽ chuyển bạn về trang đăng nhập trong {currentSeconds} giây.</p>}
             </CountDown>
           </div>

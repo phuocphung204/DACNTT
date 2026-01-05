@@ -8,13 +8,12 @@ import RequestDetailsPage from "./pages/request-details/request-details-page";
 import LoginPage from "#pages/auth/login-page";
 import StaffRequestsProcessPage from "#pages/staff-requests-process/staff-requests-process-page";
 import ResetPasswordPage from "#pages/auth/reset-password-page";
-import OfficerManageRequestsPage from "#pages/officer-manage-requests/officer-manage-requests-page";
-import SocketIoSetupPage from "#pages/socket-io-setup/socket-io-setup-page";
+import ManageDepartmentsPage from "#pages/manage-departments/manage-departments-page";
 import ManageAccountsPage from "#pages/manage-accounts/manage-accounts-page";
-import TestPage from "#pages/test-page/test-page";
 import OfficerRequestsProcessPage from "#pages/officer-requests-process/officer-requests-process-page";
 import { ACCOUNT_ROLES_ENUM } from "#components/_variables";
 import DashboardPage from "#pages/dashboard/dashboard-page";
+import UserProfilePage from "#pages/user-profile/user-profile";
 
 function App() {
   const accountRole = useSelector((state) => state.auth?.role);
@@ -41,8 +40,8 @@ function App() {
             })()}
         />
         <Route path="quan-ly-tai-khoan" element={<ManageAccountsPage />} />
-        <Route path="socket-io-setup" element={<SocketIoSetupPage />} />
-        <Route path="test-page" element={<TestPage />} />
+        <Route path="quan-ly-phong-ban" element={<ManageDepartmentsPage />} />
+        <Route path="thong-tin-ca-nhan" element={<UserProfilePage />} />
       </Route>
     </Routes>
   );

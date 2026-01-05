@@ -345,7 +345,7 @@ const OfficerManageRequestsPage = () => {
           ) : (
             <>
               <div className="table-responsive">
-                <Table hover responsive size="sm" className="align-middle">
+                <Table striped hover responsive size="sm" className="align-middle">
                   <thead>
                     {table.getHeaderGroups().map((headerGroup) => (
                       <tr key={headerGroup.id}>

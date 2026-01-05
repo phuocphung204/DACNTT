@@ -166,7 +166,9 @@ export const downloadAttachment = async (req, res) => {
 export const getRequestById = async (req, res) => {
 	try {
 		const request_id = req.params.request_id;
-		const request = await Request.findById(request_id).populate('department_id', '_id name');
+		const request = await Request.findById(request_id)
+			.populate('department_id', '_id name')
+			.populate('history.changed_by', 'name role');
 		if (!request) {
 			return res.status(404).json({ ec: 404, em: "Request not found" });
 		}
@@ -546,8 +548,24 @@ export const assignOverdueRequests = async (req, res) => {
 			})
 		);
 
-		const overdueRequests = await Request.find({ status: { $in: ["Assigned", "InProgress"] }, is_overdue: true }).select(" _id assigned_to");
+		const overdueRequests = await Request.find({ status: { $in: ["Assigned", "InProgress"] }, is_overdue: true }).select(" _id assigned_to subject");
 		// TODO: gọi api notify officer
+		overdueRequests.forEach(async (request) => {
+			const notification = await createNotification({
+				sender: {
+					name: "Hệ thống",
+					avatar: null,
+					user_id: null
+				},
+				entity_id: request._id,
+				recipient_id: request.assigned_to,
+				type: NOTIFICATION_TYPES.REQUEST_OVERDUE,
+				data: {
+					request_subject: request.subject,
+				},
+			});
+			sendNotification(request.assigned_to, notification);
+		});
 
 		res.status(200).json({ ec: 200, em: "Overdue requests updated successfully" });
 	} catch (error) {

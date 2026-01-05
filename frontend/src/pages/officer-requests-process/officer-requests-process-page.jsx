@@ -13,12 +13,7 @@ import {
   Table,
 } from "react-bootstrap";
 import { PaginationControl } from "react-bootstrap-pagination-control";
-import {
-  BsArrowRepeat,
-  BsBoxArrowUpRight,
-  BsEye,
-  BsThreeDotsVertical,
-} from "react-icons/bs";
+import { BsBoxArrowUpRight, BsEye, BsThreeDotsVertical } from "react-icons/bs";
 import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 
 import { useGetMyAssignedRequestsQuery } from "#services/request-services";
@@ -27,6 +22,10 @@ import { PAGE_SIZE_OPTIONS, PRIORITY, REQUEST_PRIORITY_MODEL, REQUEST_STATUS, TI
 import FilterClient from "#components/common/filter-cliend";
 
 import styles from "./officer-requests-process-page.module.scss";
+import { useDispatch, useSelector } from "react-redux";
+import SearchBar from "#components/common/search-bar";
+import { setValuesState } from "#redux/filter-slice";
+import { removeVietnameseTones } from "#utils/normalize";
 
 const PRIORITY_SLA_HOURS = {
   0: 48,
@@ -70,12 +69,6 @@ const computeDueState = (status, dueAt, now) => {
 
 const getErrorMessage = (error, fallback) =>
   error?.em || error?.message || fallback;
-
-const sortByCreatedAtDesc = (a, b) => {
-  const first = new Date(a?.created_at || a?.createdAt || 0).getTime();
-  const second = new Date(b?.created_at || b?.createdAt || 0).getTime();
-  return second - first;
-};
 
 const RequestTable = ({ data, onPreview, onViewDetail }) => {
   const columns = useMemo(
@@ -133,15 +126,15 @@ const RequestTable = ({ data, onPreview, onViewDetail }) => {
           if (!dueAt) return "-";
           if (dueState === "overdue") {
             return (
-              <span className="text-danger fw-semibold">
-                Quá hạn - {formatDateTime(dueAt)}
+              <span className="text-danger fw-semibold" title="Quá hạn">
+                {formatDateTime(dueAt)}
               </span>
             );
           }
           if (dueState === "due") {
             return (
-              <span className="text-warning fw-semibold">
-                Sắp đến hạn - {formatDateTime(dueAt)}
+              <span className="text-warning fw-semibold" title="Sắp đến hạn">
+                {formatDateTime(dueAt)}
               </span>
             );
           }
@@ -189,7 +182,7 @@ const RequestTable = ({ data, onPreview, onViewDetail }) => {
   });
 
   return (
-    <Table hover responsive size="sm" className="align-middle">
+    <Table striped hover responsive size="sm" className="align-middle">
       <thead>
         {table.getHeaderGroups().map((headerGroup) => (
           <tr key={headerGroup.id}>
@@ -229,20 +222,18 @@ const RequestTable = ({ data, onPreview, onViewDetail }) => {
 
 const OfficerRequestsProcessPage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const filterValues = useSelector((state) => state.filter.filterValues);
   const [previewRequest, setPreviewRequest] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
 
-  // const [filterValues, setFilterValues] = useState({
-  //   timeRange: ["today"],
-  //   priority: [],
-  //   status: [],
-  //   date: { value: [] },
-  // });
-
   const [clientFilterValues, setClientFilterValues] = useState({
-    priority: [],
-    status: [],
+    priority: filterValues?.priority || [],
+    status: filterValues?.status || [],
+    searchText: filterValues?.searchText || "",
   });
+  const currentSearchText = clientFilterValues?.searchText;
+
 
   const [activeTab, setActiveTab] = useState("assigned");
   const [pageSize, setPageSize] = useState(20);
@@ -252,24 +243,7 @@ const OfficerRequestsProcessPage = () => {
     resolved: 1,
   });
 
-  // const timeRange = filterValues.timeRange?.[0] || "today";
-  // const requestParams = useMemo(() => {
-  //   const params = {};
-  //   if (timeRange === "today") {
-  //     params.today = true;
-  //   } else if (timeRange === "weekly") {
-  //     params.weekly = true;
-  //   } else if (timeRange === "monthly") {
-  //     params.monthly = true;
-  //   } else if (timeRange === "date") {
-  //     const selectedDate = filterValues.date?.value?.[0];
-  //     if (!selectedDate) return null;
-  //     params.date = selectedDate;
-  //   }
-  //   return params;
-  // }, [timeRange, filterValues.date]);
-
-  const [requestParams, setRequestParams] = useState({ timeRange: "today" });
+  const [requestParams, setRequestParams] = useState({ timeRange: filterValues?.timeRange || "today" });
 
   const {
     data: requestsResponse,
@@ -300,17 +274,18 @@ const OfficerRequestsProcessPage = () => {
         return { ...item, status, dueAt, dueState };
       });
 
-    // const filterPriority = (list) => {
-    //   if (!filterValues.priority || filterValues.priority.length === 0) return list;
-    //   return list.filter((item) =>
-    //     filterValues.priority.includes(String(item.priority || ""))
-    //   );
-    // };
-
-    // const filterStatus = (list) => {
-    //   if (!filterValues.status || filterValues.status.length === 0) return list;
-    //   return list.filter((item) => filterValues.status.includes(item.status));
-    // };
+    const filterSearchText = (list) => {
+      if (!clientFilterValues.searchText || clientFilterValues.searchText.trim() === "") return list;
+      const searchTextLower = removeVietnameseTones(clientFilterValues.searchText.trim());
+      return list.filter((item) => {
+        const subject = item.subject || "";
+        const studentEmail = item.student_email || "";
+        return (
+          removeVietnameseTones(subject).toLowerCase().includes(searchTextLower) ||
+          removeVietnameseTones(studentEmail).toLowerCase().includes(searchTextLower)
+        );
+      });
+    }
 
     const filterPriority = (list) => {
       if (!clientFilterValues.priority || clientFilterValues.priority.length === 0) return list;
@@ -324,9 +299,9 @@ const OfficerRequestsProcessPage = () => {
       return list.filter((item) => clientFilterValues.status.includes(item.status));
     };
 
-    const assigned = filterStatus(filterPriority(applyDecorators(requestBuckets.assigned, "Assigned"))).sort(sortByCreatedAtDesc);
-    const inProgress = filterStatus(filterPriority(applyDecorators(requestBuckets.inProgress, "InProgress"))).sort(sortByCreatedAtDesc);
-    const resolved = filterStatus(filterPriority(applyDecorators(requestBuckets.resolved, "Resolved"))).sort(sortByCreatedAtDesc);
+    const assigned = filterSearchText(filterStatus(filterPriority(applyDecorators(requestBuckets.assigned, "Assigned"))));
+    const inProgress = filterSearchText(filterStatus(filterPriority(applyDecorators(requestBuckets.inProgress, "InProgress"))));
+    const resolved = filterSearchText(filterStatus(filterPriority(applyDecorators(requestBuckets.resolved, "Resolved"))));
 
     return { assigned, inProgress, resolved };
   }, [requestBuckets, clientFilterValues]);
@@ -466,6 +441,12 @@ const OfficerRequestsProcessPage = () => {
     );
   };
 
+  const handleSearchBarSubmit = (newParams) => {
+    const q = newParams.get("q") || "";
+    dispatch(setValuesState({ param: "searchText", values: q }));
+    setClientFilterValues((prev) => ({ ...prev, searchText: q }));
+  }
+
   const previewStatus = previewRequest
     ? normalizeStatus(previewRequest.status)
     : null;
@@ -491,6 +472,7 @@ const OfficerRequestsProcessPage = () => {
   const previewStudentEmail =
     previewRequest?.student_email || previewRequest?.studentEmail || "-";
   const previewId = previewRequest?._id || previewRequest?.id || "-";
+
   return (
     <div>
       <div className={styles.pageHeader}>
@@ -506,7 +488,6 @@ const OfficerRequestsProcessPage = () => {
           onClick={handleRefresh}
           disabled={loading}
         >
-          <BsArrowRepeat className="me-1" />
           Làm mới
         </Button>
       </div>
@@ -514,7 +495,21 @@ const OfficerRequestsProcessPage = () => {
       <Card className={`mb-3 ${styles.filtersCard}`}>
         <Card.Body>
           <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <FilterClient onSubmit={handleFilterSubmit} selectedFilterOptions={[TIME_RANGE, PRIORITY]} />
+            <div className="w-100">
+              <SearchBar
+                initialValue={currentSearchText}
+                placeholder="Tìm kiếm theo tiêu đề, mã sinh viên"
+                onSubmit={handleSearchBarSubmit}
+              />
+            </div>
+            <FilterClient onSubmit={handleFilterSubmit}
+              selectedFilterOptions={[TIME_RANGE, PRIORITY]}
+              defaultValues={[{
+                optionKey: TIME_RANGE,
+                optionLabel: "Thời gian",
+                displayValues: ["Hôm nay"],
+              }]}
+            />
             {loading && <Spinner animation="border" size="sm" />}
           </div>
           {displayError && (

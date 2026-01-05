@@ -130,6 +130,15 @@ export const getAllAccounts = async (req, res) => {
     if (filter.department_id) {
       filter.department_id = { $in: Array.isArray(filter.department_id) ? filter.department_id : [filter.department_id] }; // hỗ trợ nhiều department_id
     }
+    if (filter.q) {
+      const searchRegex = new RegExp(filter.q, "i");
+      filter.$or = [
+        { name: searchRegex },
+        // { email: searchRegex },
+        // { position: searchRegex },
+      ];
+      delete filter.q;
+    }
     const [accounts, totalAccounts] = await Promise.all([
       Account.find(filter).select("-password")
         .skip((pageNumber - 1) * pageSize)

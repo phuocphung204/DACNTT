@@ -23,7 +23,7 @@ import RequestDetailTab from "#components/request-details/request-detail-tab";
 import RequestConversationTab from "#components/request-details/request-conversation-tab";
 import RequestSendMailTab from "#components/request-details/request-send-mail-tab";
 import { getErrorMessage } from "#components/request-details/request-details-utils";
-import { useGetConversationQuery, useLazyGetConversationQuery } from "services/request-services";
+import { useLazyGetConversationQuery } from "services/request-services";
 
 const TAB_KEYS_ENUM = Object.freeze({
   DETAIL: "detail",
@@ -343,7 +343,7 @@ const RequestDetailsPage = () => {
             </Card.Body>
           </Card>
 
-          <Card className="mb-3">
+          {/* <Card className="mb-3">
             <Card.Body>
               <div className="fw-semibold mb-2">Ghi chú nội bộ</div>
               <Form.Control
@@ -356,7 +356,7 @@ const RequestDetailsPage = () => {
                 Chức năng lưu ghi chú sẽ được bổ sung trong phiên bản tiếp theo.
               </div>
             </Card.Body>
-          </Card>
+          </Card> */}
 
           <Card>
             <Card.Body className="d-flex flex-column gap-2">

@@ -1,14 +1,15 @@
-import { useEffect, memo } from "react";
+import { useEffect, memo, useCallback, useState, useMemo } from "react";
 import { useImmer } from "use-immer";
 import { useSearchParams } from "react-router-dom";
 import { Badge, Button, Form, OverlayTrigger, Popover, ToggleButton, ToggleButtonGroup } from "react-bootstrap";
-import { BsCalendar3 } from "react-icons/bs";
+import { BsBackspace, BsCalendar3, BsFilterCircle } from "react-icons/bs";
 import { useRenderCount } from "#custom-hooks/use-render-count";
 import DateRangePicker from "react-bootstrap-daterangepicker";
 
-import { getParamsWithArrays, updateParams } from "#utils";
+import { formatDate, getParamsWithArrays, updateParams } from "#utils";
 
 import styles from "./filter.module.scss";
+import { useGetDepartmentsQuery } from "services/department-services";
 
 const FilterOptions = {
   timeRange: {
@@ -68,8 +69,8 @@ const FilterOptions = {
     multiselect: true,
     defaultValue: null,
     values: [
-      { label: "Cán bộ", value: "Officer" },
-      { label: "Nhân viên", value: "Staff" },
+      { label: "Officer", value: "Officer" },
+      { label: "Staff", value: "Staff" },
       { label: "Quản trị viên", value: "Admin" },
     ],
   },
@@ -96,14 +97,23 @@ const FilterOptions = {
       { label: "Vô hiệu hóa", value: "false" },
     ],
   },
+  department_id: {
+    label: "Phòng ban",
+    param: "department_id",
+    icon: <BsCalendar3 size={13} />,
+    multiselect: true,
+    defaultValue: null,
+    values: [], // Lấy động từ API
+  }
 };
 
 const Filter = memo(({
   selectedFilterOptions = ["timeRange", "priority", "status"],
+  defaultValues = [],
   onSubmit,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
-
+  const { data: departmentsResponse } = useGetDepartmentsQuery(undefined, { skip: !selectedFilterOptions.includes("department_id") });
   const [paramStates, setParamStates] = useImmer(() => {
     const initialStates = {};
     selectedFilterOptions.forEach((optionKey) => {
@@ -130,6 +140,11 @@ const Filter = memo(({
 
     return initialStates;
   });
+  const getDepartmentValues = useCallback(() => {
+    if (!departmentsResponse?.dt) return null;
+    const depts = departmentsResponse?.dt || null;
+    return depts.map(dept => ({ label: dept.name, value: dept._id }));
+  }, [departmentsResponse]);
 
   const [filterChildState, setFilterChildState] = useImmer(() => {
     const initial = {};
@@ -150,6 +165,47 @@ const Filter = memo(({
     return initial;
   });
 
+  const previewFilters = useMemo(() => {
+    const collected = [];
+    selectedFilterOptions.forEach((optionKey) => {
+      const option = FilterOptions[optionKey];
+      const rawValues = paramStates[optionKey].values;
+      // console.log("Previewing filter:", optionKey, option, rawValues);
+
+      if (!option || !Array.isArray(rawValues) || rawValues.length === 0) return;
+
+      const displayValues = rawValues.map((val) => option.values.find((opt) => opt.value === val)?.label || val);
+
+      if (option.childValues) {
+        Object.keys(option.childValues).forEach((childKey) => {
+          const childValue = paramStates[childKey];
+          const parentValues = Array.isArray(rawValues) ? rawValues : [];
+          const isChildActive = childValue?.value?.length > 0 && parentValues.includes(childValue.pendingParentValue);
+
+          if (!isChildActive) return;
+
+          const childLabel = option.childValues[childKey]?.[0]?.label || childKey;
+          const childDisplayValues = (childValue.value || []).map((val) => {
+            const formatted = formatDate(val);
+            return formatted === "-" ? val : formatted;
+          });
+
+          displayValues.push(`${childLabel}: ${childDisplayValues.join(" - ")}`);
+        });
+      }
+
+      collected.push({
+        optionKey,
+        optionLabel: option.label,
+        displayValues,
+      });
+    });
+    return collected;
+  }, [paramStates, selectedFilterOptions]);
+  const [appliedFilters, setAppliedFilters] = useState(previewFilters || []);
+  useEffect(() => {
+    console.log("Applied filters updated:", appliedFilters);
+  }, [appliedFilters]);
   // Handle Functions
   const handleValueChange = (optionKey) => (nextValue) => {
     setParamStates(draft => {
@@ -182,6 +238,7 @@ const Filter = memo(({
   };
 
   const handleApplyFilters = () => {
+    setAppliedFilters(previewFilters);
     let nextParams = new URLSearchParams(searchParams);
     Object.entries(paramStates).forEach(([param, state]) => {
       const hasParent = state.hasOwnProperty("parent");
@@ -208,6 +265,23 @@ const Filter = memo(({
       setSearchParams(nextParams);
     }
   }
+
+  const handleResetFilters = () => {
+    setParamStates(draft => {
+      selectedFilterOptions.forEach((optionKey) => {
+        const option = FilterOptions[optionKey];
+        draft[option.param].values = option.defaultValue || [];
+      });
+    });
+    setFilterChildState(draft => {
+      Object.keys(draft).forEach(childKey => {
+        draft[childKey].show = false;
+        draft[childKey].childValues = [];
+        draft[childKey].childType = "";
+      });
+    });
+    setAppliedFilters(defaultValues);
+  };
 
   // Render Functions
   const renderChildValues = (type, childValues, optionKey) => {
@@ -300,6 +374,12 @@ const Filter = memo(({
     }
   }
 
+  useEffect(() => {
+    if (getDepartmentValues()) {
+      FilterOptions.department_id.values = getDepartmentValues();
+    }
+  }, [getDepartmentValues]);
+
   // TODO: các debug cần xóa
   // Start debug
   useRenderCount("Filter");
@@ -313,53 +393,83 @@ const Filter = memo(({
   // End debug
 
   return (
-    <section className="d-flex g-2">
-      {selectedFilterOptions.map(
-        (optionKey) => {
-          const isActive = paramStates[optionKey].active;
-          const filterOption = FilterOptions[optionKey];
-          const type = filterOption.multiselect ? "checkbox" : "radio";
-          const filterCount = paramStates[optionKey].values.length;
-          return (
-            <OverlayTrigger
-              key={`olt-${filterOption.param}`}
-              delay={{ show: 250, hide: 0 }}
-              trigger="click"
-              onToggle={(nextShow) => setParamStates(draft => { draft[optionKey].active = nextShow })}
-              placement="bottom-start"
-              rootClose
-              overlay={
-                <Popover style={{ maxWidth: "300px" }} className={styles.parentFontSizeContainer}>
-                  <Popover.Body className="d-flex flex-column py-2">
-                    <div>
-                      {renderFilterValues(type, filterOption.values, optionKey)}
-                    </div>
-                    <Button variant="link" className="me-2 text-danger"
-                      onClick={() => handleResetValue(optionKey)}>
-                      Đặt lại
-                    </Button>
-                  </Popover.Body>
-                </Popover>
-              }
-            >
-              <Button variant=""
-                className={`${styles.btnFilterOption} rounded-pill d-flex align-items-center`}
-                active={isActive}
+    <>
+      <section className="d-flex g-2 align-items-center w-100">
+        {selectedFilterOptions.map(
+          (optionKey) => {
+            const isActive = paramStates[optionKey].active;
+            const filterOption = FilterOptions[optionKey];
+            const type = filterOption.multiselect ? "checkbox" : "radio";
+            const filterCount = paramStates[optionKey].values.length;
+            return (
+              <OverlayTrigger
+                key={`olt-${filterOption.param}`}
+                delay={{ show: 250, hide: 0 }}
+                trigger="click"
+                onToggle={(nextShow) => setParamStates(draft => { draft[optionKey].active = nextShow })}
+                placement="bottom-start"
+                rootClose
+                overlay={
+                  <Popover style={{ maxWidth: "300px" }} className={styles.parentFontSizeContainer}>
+                    <Popover.Body className="d-flex flex-column py-2">
+                      <div>
+                        {renderFilterValues(type, filterOption.values, optionKey)}
+                      </div>
+                      <Button variant="link" className="me-2 text-danger"
+                        onClick={() => handleResetValue(optionKey)}>
+                        Đặt lại
+                      </Button>
+                    </Popover.Body>
+                  </Popover>
+                }
               >
-                {filterOption.icon}
-                {filterOption.label}
-                <Badge bg="danger"
-                  className={`${styles.badgeFilterCount} rounded-circle ${filterCount > 1 ? "" : "text-danger"} ${filterCount === 0 ? "opacity-0" : ""}`}
+                <Button variant=""
+                  className={`${styles.btnFilterOption} rounded-pill d-flex align-items-center`}
+                  active={isActive}
                 >
-                  {filterCount}
-                </Badge>
-              </Button>
-            </OverlayTrigger>
-          )
-        }
-      )}
-      <Button variant="outline-success" className="ms-auto" onClick={handleApplyFilters}>Áp dụng</Button>
-    </section>
+                  {filterOption.icon}
+                  {filterOption.label}
+                  <Badge bg="danger"
+                    className={`${styles.badgeFilterCount} rounded-circle ${filterCount > 1 ? "" : "text-danger"} ${filterCount === 0 ? "opacity-0" : ""}`}
+                  >
+                    {filterCount}
+                  </Badge>
+                </Button>
+              </OverlayTrigger>
+            )
+          }
+        )}
+        <BsBackspace
+          className={`${styles.btnResetFilters}`}
+          title="Đặt lại bộ lọc"
+          style={{
+            fontSize: "1.5em",
+          }}
+          onClick={handleResetFilters}
+        />
+        <BsFilterCircle
+          className={`${styles.btnApplyFilters}`}
+          title="Áp dụng bộ lọc"
+          style={{
+            fontSize: "1.5em",
+          }}
+          onClick={handleApplyFilters}
+        />
+      </section>
+      <div className={`${styles.parentFontSizeContainer} ${styles.activeFiltersRow} mt-2 d-flex align-items-center flex-wrap gap-2 w-100`}>
+        <span className="text-muted fw-semibold">Đang lọc theo:</span>
+        {appliedFilters.length === 0 ? (
+          <span className="text-muted">Không có bộ lọc</span>
+        ) : (
+          appliedFilters.map(({ optionKey, optionLabel, displayValues }) => (
+            <span key={`applied-${optionKey}`} text="dark" className={`${styles.activeFilterBadge} rounded-pill`}>
+              <span className="fw-semibold me-1">{optionLabel}:</span>
+              <span>{displayValues.join(", ")}</span>
+            </span>
+          ))
+        )}
+      </div>
+    </>
   )
 });
 

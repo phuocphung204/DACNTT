@@ -13,40 +13,15 @@ import styles from "./filter.module.scss";
 const FilterClient = ({
   selectedFilterOptions = ["timeRange", "priority", "status"],
   onSubmit,
+  defaultValues,
   isFetching = false,
 }) => {
   const dispatch = useDispatch();
   const activeFilters = useSelector(state => state.filter.activeFilters);
   const filterValues = useSelector(state => state.filter.filterValues);
   const filterChilds = useSelector(state => state.filter.filterChilds);
-  const [activeReset, setActiveReset] = useState(false);
-  const [appliedFilters, setAppliedFilters] = useState([]);
-
-  // Handle Functions
-  const handleValueChange = (optionKey) => (nextValue) => {
-    dispatch(setValuesState({ param: optionKey, values: [nextValue] }));
-  };
-
-  const handleCheckboxValueChange = (optionKey) => (e) => {
-    const { value, checked } = e.target;
-    // console.log(value, checked);
-    const currentValues = filterValues[optionKey] || [];
-    let nextValues = [];
-    if (checked) {
-      nextValues = [...currentValues, value];
-    } else {
-      nextValues = currentValues.filter(v => v !== value);
-    }
-    dispatch(setValuesState({ param: optionKey, values: nextValues }));
-  };
-
-  const handleResetValue = (optionKey) => {
-    dispatch(resetFilterValue({ param: optionKey }));
-  };
-
   const previewFilters = useMemo(() => {
     const collected = [];
-
     selectedFilterOptions.forEach((optionKey) => {
       const option = CLIENT_FILTERS[optionKey];
       const rawValues = filterValues[optionKey];
@@ -79,15 +54,31 @@ const FilterClient = ({
         displayValues,
       });
     });
-
-    if (activeReset) {
-      console.log("Reset applied filters");
-      setActiveReset(false);
-      setAppliedFilters(collected);
-    }
-
     return collected;
-  }, [filterValues, selectedFilterOptions, activeReset]);
+  }, [filterValues, selectedFilterOptions]);
+  const [appliedFilters, setAppliedFilters] = useState(previewFilters || []);
+
+  // Handle Functions
+  const handleValueChange = (optionKey) => (nextValue) => {
+    dispatch(setValuesState({ param: optionKey, values: [nextValue] }));
+  };
+
+  const handleCheckboxValueChange = (optionKey) => (e) => {
+    const { value, checked } = e.target;
+    // console.log(value, checked);
+    const currentValues = filterValues[optionKey] || [];
+    let nextValues = [];
+    if (checked) {
+      nextValues = [...currentValues, value];
+    } else {
+      nextValues = currentValues.filter(v => v !== value);
+    }
+    dispatch(setValuesState({ param: optionKey, values: nextValues }));
+  };
+
+  const handleResetValue = (optionKey) => {
+    dispatch(resetFilterValue({ param: optionKey }));
+  };
 
   const handleApplyFilters = () => {
     const returnedFilterValues = {};
@@ -121,7 +112,7 @@ const FilterClient = ({
         });
       }
     });
-    setActiveReset(true);
+    setAppliedFilters(defaultValues);
     // handleApplyFilters();
   }
 

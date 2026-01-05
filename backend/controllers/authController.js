@@ -36,7 +36,7 @@ const resetPassword = async (req, res) => {
 
 		// Tạo token reset
 		const resetToken = generateResetToken(account._id);
-		const resetLink = `${redirectUrl}?token=${resetToken}` || `${process.env.FRONTEND_URL}/quen-mat-khau?token=${resetToken}`;
+		const resetLink = redirectUrl ? `${redirectUrl}?token=${resetToken}` : `${process.env.FRONTEND_URL}/quen-mat-khau?token=${resetToken}`;
 
 		// Gửi email
 		await transporter.sendMail({

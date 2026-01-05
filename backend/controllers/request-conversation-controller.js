@@ -5,6 +5,41 @@ import Account from "../models/Account.js";
 import { convert } from "html-to-text";
 import Department from "../models/Department.js";
 
+export const getReplyMail = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+
+    // Tìm cuộc hội thoại dựa trên request_id
+    const conversation = await RequestConversation.findOne({ request_id: requestId });
+
+    // Nếu chưa có hội thoại hoặc chưa có tin nhắn, trả về rỗng
+    if (!conversation || !Array.isArray(conversation.messages) || conversation.messages.length === 0) {
+      return res.status(200).json({
+        ec: 0,
+        em: "No reply mail found",
+        dt: null
+      });
+    }
+
+    // Theo yêu cầu: mail đã phản hồi cho sinh viên là phần tử đầu tiên trong mảng messages
+    const messageToReply = conversation.messages[0];
+
+    return res.status(200).json({
+      ec: 0,
+      em: "Get reply mail success",
+      dt: {
+        in_reply_to: messageToReply?.message_id || null,
+        references: messageToReply?.references || [],
+        original_content: messageToReply?.content || "",
+        original_html_content: messageToReply?.html_content || ""
+      }
+    });
+  } catch (error) {
+    console.error("Error in getReplyMail:", error);
+    return res.status(500).json({ ec: -1, em: error.message });
+  }
+};
+
 // [GET] /api/requests/:requestId/conversation
 export const getConversation = async (req, res) => {
   try {

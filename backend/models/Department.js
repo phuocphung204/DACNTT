@@ -25,6 +25,8 @@ const departmentSchema = new Schema(
 		description: { type: String, required: true },
 		labels: [labelSchema],
 		email: { type: String, required: true, unique: false },
+		room: { type: String, required: false, default: "" },
+		phone_number: { type: String, required: false, default: "" },
 		google_info: { type: Object, default: {} } // Lưu thông tin Google OAuth (nếu có)
 	},
 	{

@@ -56,8 +56,9 @@ export const createDepartment = async (req, res) => {
 export const updateDepartment = async (req, res) => {
   try {
     const { department_id } = req.params;
-    const { name, description, labels } = req.body;
-    const department = await Department.findByIdAndUpdate(department_id, { name, description, labels }, { new: true });
+    console.log("Updating department with ID:", req.body);
+    const { name, description, labels, phone_number, room } = req.body;
+    const department = await Department.findByIdAndUpdate(department_id, { name, description, labels, phone_number, room }, { new: true });
     if (!department) {
       return res.status(404).json({ ec: 404, em: "Department not found" });
     }

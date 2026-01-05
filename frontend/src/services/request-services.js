@@ -99,6 +99,14 @@ export const requestService = backendApi.injectEndpoints({
       providesTags: (_result, _error, requestId) => [{ type: "RequestConversation", id: requestId }],
     }),
 
+    getReplyMail: build.query({
+      query: (requestId) => ({
+        url: `/requests/${requestId}/reply-mail`,
+        method: "GET",
+      }),
+      providesTags: (_result, _error, requestId) => [{ type: "RequestConversation", id: requestId }],
+    }),
+
     // Các endpoint cho Officer
     getMyAssignedRequests: build.query({
       query: (params) => ({
@@ -146,6 +154,8 @@ export const {
   useDownloadAttachmentMutation,
   useGetConversationQuery,
   useLazyGetConversationQuery,
+  useGetReplyMailQuery,
+  useLazyGetReplyMailQuery,
   useSearchKnowledgeBaseQuery,
 
   // Các endpoint cho Officer

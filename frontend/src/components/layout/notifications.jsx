@@ -4,6 +4,7 @@ import {
   BsBellFill,
   BsCheck2All,
   BsEnvelopeAt,
+  BsExclamationCircle,
   BsFillFileEarmarkPlusFill,
   BsFillTagFill,
 } from "react-icons/bs";
@@ -77,6 +78,8 @@ const Notifications = () => {
 
   const renderNotificationIcon = (notification) => {
     switch (notification.type) {
+      case NOTIFICATION_TYPES.REQUEST_OVERDUE:
+        return <BsExclamationCircle className={styles.iconOverdue} />;
       case NOTIFICATION_TYPES.REQUEST_ASSIGNED:
         return <BsFillTagFill className={styles.iconAssigned} />;
       case NOTIFICATION_TYPES.REQUEST_REPLY_STUDENT:
@@ -101,9 +104,7 @@ const Notifications = () => {
         </>
       );
     }
-
     if (notification.type === NOTIFICATION_TYPES.REQUEST_REPLY_STUDENT) {
-      const senderName = notification.senders?.[0]?.name || "Sinh viên";
       const subject = notification.data?.request_subject || "yêu cầu";
       const preview = notification.data?.message_preview;
       return (
@@ -118,7 +119,6 @@ const Notifications = () => {
         </>
       );
     }
-
     if (notification.type === NOTIFICATION_TYPES.NEW_REQUEST) {
       const subject = notification.data?.subject || "yêu cầu mới";
       return (
@@ -126,6 +126,17 @@ const Notifications = () => {
           <div className="fw-semibold text-dark">Yêu cầu mới</div>
           <div className="small text-muted">
             Có yêu cầu mới từ sinh viên: <span className="fw-semibold text-dark">{subject}</span>
+          </div>
+        </>
+      );
+    }
+    if (notification.type === NOTIFICATION_TYPES.REQUEST_OVERDUE) {
+      const subject = notification.data?.request_subject || "yêu cầu";
+      return (
+        <>
+          <div className="fw-semibold text-dark">Yêu cầu quá hạn</div>
+          <div className="small text-muted">
+            Yêu cầu <span className="fw-semibold text-dark">{subject}</span> đã quá hạn xử lý
           </div>
         </>
       );
@@ -151,13 +162,14 @@ const Notifications = () => {
     try {
       const requestId = notification?.entity_id;
       switch (notification.type) {
+        case NOTIFICATION_TYPES.REQUEST_OVERDUE:
         case NOTIFICATION_TYPES.REQUEST_ASSIGNED:
           // Chuyển trang đến request
           if (!requestId) {
             toast.error("Không tìm thấy yêu cầu");
             break;
           }
-          navigate(`/yeu-cau/${requestId}`, { replace: false });
+          navigate(`/yeu-cau/${requestId}`, { replace: false, state: { tabKey: "details" } });
           break;
         case NOTIFICATION_TYPES.REQUEST_REPLY_STUDENT:
           // Chuyển trang đến request

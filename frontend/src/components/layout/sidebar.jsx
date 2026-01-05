@@ -6,6 +6,7 @@ import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
 import UserActions from "./user-actions";
 import { ACCOUNT_ROLES_ENUM } from "#components/_variables";
 import { useSelector } from "react-redux";
+import { id } from "zod/v4/locales";
 
 const scrollbarOptions = {
   scrollbars: {
@@ -16,7 +17,7 @@ const scrollbarOptions = {
 };
 
 const NAV_ITEMS = [
-  { id: "dashboard", label: "Tổng quan", icon: "bi-speedometer", to: "/tong-quan" },
+  { id: "dashboard", label: "Tổng quan", icon: "bi-speedometer", to: "/tong-quan", allowRoles: [ACCOUNT_ROLES_ENUM.ADMIN] },
   // {
   //   id: "layout",
   //   label: "Layout Options",
@@ -36,6 +37,7 @@ const NAV_ITEMS = [
   { id: "staff-requests-process", label: "Xử lý yêu cầu", icon: "bi-people", to: "/xu-ly-yeu-cau", allowRoles: [ACCOUNT_ROLES_ENUM.STAFF] },
   { id: "officer-requests-process", label: "Xử lý yêu cầu", icon: "bi-people", to: "/xu-ly-yeu-cau", allowRoles: [ACCOUNT_ROLES_ENUM.OFFICER] },
   { id: "manage-accounts", label: "Quản lý tài khoản", icon: "bi-person-lines-fill", to: "/quan-ly-tai-khoan", allowRoles: [ACCOUNT_ROLES_ENUM.ADMIN] },
+  { id: "manage-departments", label: "Quản lý phòng ban", icon: "bi-building", to: "/quan-ly-phong-ban", allowRoles: [ACCOUNT_ROLES_ENUM.ADMIN] },
   // { id: "test-page", label: "Test Page", icon: "bi-file-earmark-code", to: "/test-page" },
 ];
 

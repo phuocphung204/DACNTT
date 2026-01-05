@@ -8,6 +8,7 @@ import {
   useAssignRequestToOfficerMutation,
   useDownloadAttachmentMutation,
   useGetRequestByIdQuery,
+  useGetReplyMailQuery,
 } from "#services/request-services";
 import {
   useGetAllLabelsQuery,
@@ -28,6 +29,7 @@ const RequestDetailModalBody = ({ requestId, onAssigned, activeTab = "pending" }
     priority: 3,
     officerId: "",
   });
+  const [replyViewMode, setReplyViewMode] = useState("html");
   const [downloadingId, setDownloadingId] = useState("");
   const {
     data: detailResponse,
@@ -35,6 +37,13 @@ const RequestDetailModalBody = ({ requestId, onAssigned, activeTab = "pending" }
     error,
     refetch,
   } = useGetRequestByIdQuery(requestId, { skip: !requestId });
+
+  const {
+    data: replyMailResponse,
+    isLoading: replyMailLoading,
+  } = useGetReplyMailQuery(requestId, { skip: !requestId || activeTab !== "resolved" });
+
+  const replyMail = replyMailResponse?.dt;
 
   const detail = detailResponse?.dt;
   const predictionDepartmentId = detail?.prediction?.department_id;
@@ -151,11 +160,25 @@ const RequestDetailModalBody = ({ requestId, onAssigned, activeTab = "pending" }
     console.log("Manual form updated:", manualForm);
   }, [manualForm]);
 
+  useEffect(() => {
+    if (!replyMail) return;
+    if (replyMail?.original_html_content) {
+      setReplyViewMode("html");
+    } else {
+      setReplyViewMode("text");
+    }
+  }, [replyMail]);
+
   const [_usePrediction, { isLoading: predictionLoading }] =
     useApplyPredictionByRequestIdMutation();
   const [assignRequest, { isLoading: manualLoading }] =
     useAssignRequestToOfficerMutation();
   const [downloadAttachment] = useDownloadAttachmentMutation();
+
+  const sortedHistory = useMemo(() => {
+    if (!Array.isArray(detail?.history)) return [];
+    return [...detail.history].sort((a, b) => new Date(a.changed_at) - new Date(b.changed_at));
+  }, [detail?.history]);
 
   const handleUsePrediction = async () => {
     if (!selectedOfficer) {
@@ -333,32 +356,48 @@ const RequestDetailModalBody = ({ requestId, onAssigned, activeTab = "pending" }
           )}
         </div>
         <div className="row g-2 align-items-end mt-2">
-          <div className="col-lg-6">
-            <Form.Label className="small mb-1">
-              Nhân viên phòng ban
-            </Form.Label>
-            <Form.Select
-              name="prediction-officer"
-              size="sm"
-              value={selectedOfficer}
-              onChange={(event) => {
-                setSelectedOfficer(event.target.value);
-                if (activeTab === "assigned") setManualForm((prev) => ({ ...prev, officerId: event.target.value }));
-              }}
-              disabled={!hasPrediction || predictionOfficers.length === 0}
-            >
-              <option value="">Chọn nhân viên</option>
-              {predictionOfficers.map((officer) => (
-                <option key={officer._id} value={officer._id}>
-                  {officer.name} - đang nhận: {officer.total_requests_count || 0} - đang xử lý: {officer.in_progress_requests_count || 0}
-                </option>
-              ))}
-            </Form.Select>
-          </div>
+          {(activeTab === "pending" || activeTab === "assigned") && (
+            <div className="col-lg-6">
+              <Form.Label className="small mb-1">
+                Nhân viên phòng ban
+              </Form.Label>
+              <Form.Select
+                name="prediction-officer"
+                size="sm"
+                value={selectedOfficer}
+                onChange={(event) => {
+                  setSelectedOfficer(event.target.value);
+                  if (activeTab === "assigned") setManualForm((prev) => ({ ...prev, officerId: event.target.value }));
+                }}
+                disabled={!hasPrediction || predictionOfficers.length === 0}
+              >
+                <option value="">Chọn nhân viên</option>
+                {predictionOfficers.map((officer) => (
+                  <option key={officer._id} value={officer._id}>
+                    {officer.name} - đang nhận: {officer.total_requests_count || 0} - đang xử lý: {officer.in_progress_requests_count || 0}
+                  </option>
+                ))}
+              </Form.Select>
+            </div>
+          )}
           {activeTab === "assigned" && (
             <div className="col-lg-6">
               <Form.Label className="small mb-1">
                 Nhân viên đang nhận
+              </Form.Label>
+              <Form.Control
+                size="sm"
+                readOnly
+                name="current-officer"
+                value={currentOfficerDisplay || "Chưa có"}
+              >
+              </Form.Control>
+            </div>
+          )}
+          {(activeTab === "inProgress" || activeTab === "resolved") && (
+            <div className="col-lg-6">
+              <Form.Label className="small mb-1">
+                Nhân viên được phân công
               </Form.Label>
               <Form.Control
                 size="sm"
@@ -557,6 +596,81 @@ const RequestDetailModalBody = ({ requestId, onAssigned, activeTab = "pending" }
           </Card>
         </div>
       </div>
+
+      {/* Hiển mail phản hồi và lịch sử status */}
+      {activeTab === "resolved" && (
+        <div className="row g-3 mt-3">
+          <div className="col-lg-7">
+            <Card className="h-100">
+              <Card.Body>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <Card.Title className="h6 mb-0">Mail phản hồi</Card.Title>
+                  <div className="btn-group btn-group-sm" role="group">
+                    <Button
+                      variant={replyViewMode === "html" ? "primary" : "outline-primary"}
+                      onClick={() => setReplyViewMode("html")}
+                      disabled={!replyMail?.original_html_content}
+                    >
+                      HTML
+                    </Button>
+                    <Button
+                      variant={replyViewMode === "text" ? "primary" : "outline-primary"}
+                      onClick={() => setReplyViewMode("text")}
+                    >
+                      Text
+                    </Button>
+                  </div>
+                </div>
+
+                {replyMailLoading ? (
+                  <div className="text-center py-3">
+                    <Spinner animation="border" size="sm" />
+                  </div>
+                ) : !replyMail ? (
+                  <div className="text-muted small">Không có mail phản hồi</div>
+                ) : replyViewMode === "html" && replyMail?.original_html_content ? (
+                  <div
+                    style={{ maxHeight: "520px", overflow: "auto", border: "1px solid #e9ecef", borderRadius: "8px", padding: "12px", background: "#fff", wordBreak: "break-word" }}
+                    dangerouslySetInnerHTML={{ __html: replyMail.original_html_content }}
+                  />
+                ) : (
+                  <pre className={`${styles.emailContent} small mb-0`} style={{ whiteSpace: "pre-wrap" }}>
+                    {replyMail?.original_content || "Không có nội dung"}
+                  </pre>
+                )}
+              </Card.Body>
+            </Card>
+          </div>
+          <div className="col-lg-5">
+            <Card className="h-100">
+              <Card.Body>
+                <Card.Title className="h6 mb-3">Lịch sử trạng thái</Card.Title>
+                {sortedHistory.length === 0 ? (
+                  <div className="text-muted small">Chưa có lịch sử</div>
+                ) : (
+                  <ListGroup variant="flush">
+                    {sortedHistory.map((item, idx) => (
+                      <ListGroup.Item key={`${item.status}-${item.changed_at}-${idx}`} className="d-flex justify-content-between align-items-start">
+                        <div>
+                          <Badge bg={REQUEST_STATUS[item.status]?.variant || "secondary"} className="me-2">
+                            {REQUEST_STATUS[item.status]?.label || item.status}
+                          </Badge>
+                          <span className="text-muted small">{formatDateTime(item.changed_at)}</span>
+                        </div>
+                        {item.changed_by ? (
+                          <div className="text-end text-muted small">
+                            Bởi: {item.changed_by?.name || ""} {item.changed_by?.role ? `(${item.changed_by.role})` : ""}
+                          </div>
+                        ) : null}
+                      </ListGroup.Item>
+                    ))}
+                  </ListGroup>
+                )}
+              </Card.Body>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

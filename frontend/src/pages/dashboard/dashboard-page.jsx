@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Chart as ChartJS,
   BarElement,
@@ -22,7 +22,6 @@ import {
   Stack,
   Table,
 } from "react-bootstrap";
-import { BsArrowRepeat } from "react-icons/bs";
 import { Bar, Line } from "react-chartjs-2";
 import styles from "./dashboard-page.module.scss";
 
@@ -58,6 +57,7 @@ const getInitialFilters = () => {
     start: "",
     end: "",
     departmentId: "",
+    prevDepartmentId: "",
   };
 };
 
@@ -179,7 +179,10 @@ const DashboardPage = () => {
     const nextScope = event.target.value;
     setScope(nextScope);
     if (nextScope === "overall") {
-      setFilters((prev) => ({ ...prev, departmentId: "" }));
+      setFilters((prev) => ({ ...prev, departmentId: "", prevDepartmentId: prev.departmentId }));
+    }
+    if (nextScope === "department") {
+      setFilters((prev) => ({ ...prev, departmentId: prev.prevDepartmentId || "" }));
     }
   };
 
@@ -205,7 +208,6 @@ const DashboardPage = () => {
 
   const statusStats = isOverall ? (advanced.by_status || []) : (department.by_status || []);
   const labelStats = isOverall ? (advanced.by_label || []) : (department.by_label || []);
-  const timelineGlobal = advanced.timeline_label || [];
   const timelineDepartment = department.timeline_label || [];
 
   const departmentStackedData = useMemo(() => {
@@ -361,6 +363,10 @@ const DashboardPage = () => {
     );
   };
 
+  useEffect(() => {
+    console.log("Filters changed:", filters);
+  }, [filters]);
+
   return (
     <Container fluid className="py-3">
       <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
@@ -369,7 +375,7 @@ const DashboardPage = () => {
           <div className="text-muted">Theo dõi tiến độ xử lý yêu cầu theo thời gian</div>
         </div>
         <Button variant="outline-secondary" onClick={handleRefresh} disabled={isLoading}>
-          {isLoading ? <Spinner animation="border" size="sm" /> : <BsArrowRepeat className="me-2" />} Tải lại
+          Làm mới
         </Button>
       </div>
 
@@ -505,25 +511,25 @@ const DashboardPage = () => {
       {isOverall && (
         <Row className="g-3 mb-3">
           <Col md={4} sm={6}>
-            <Card className={`${styles.statCard} ${styles.primary} h-100`}>
+            <Card className={`${styles.statCard} ${styles.primary} h-100 text-bg-primary`}>
               <Card.Body>
-                <div className="text-muted small">Tổng yêu cầu</div>
+                <div className="small">Tổng yêu cầu</div>
                 <div className="display-6 fw-semibold">{numberFormat(advanced.total_requests || 0)}</div>
-                <div className="text-muted small">Trong phạm vi lọc</div>
+                <div className="small">Trong phạm vi lọc</div>
               </Card.Body>
             </Card>
           </Col>
 
           <Col md={4} sm={6}>
-            <Card className={`${styles.statCard} ${styles.info} h-100`}>
+            <Card className={`${styles.statCard} ${styles.info} h-100 text-bg-info`}>
               <Card.Body>
-                <div className="text-muted small">Trạng thái phổ biến</div>
+                <div className="small">Trạng thái phổ biến</div>
                 <div className="h4 fw-semibold mb-1">
                   {statusStats?.[0]?.status
                     ? REQUEST_STATUS[statusStats[0].status]?.label || statusStats[0].status
                     : "Chưa có"}
                 </div>
-                <div className="text-muted small">
+                <div className="small">
                   {statusStats?.[0]?.count ? `${numberFormat(statusStats[0].count)} yêu cầu` : "Không có dữ liệu"}
                 </div>
               </Card.Body>
@@ -531,11 +537,11 @@ const DashboardPage = () => {
           </Col>
 
           <Col md={4} sm={6}>
-            <Card className={`${styles.statCard} ${styles.success} h-100`}>
+            <Card className={`${styles.statCard} ${styles.success} h-100 text-bg-success`}>
               <Card.Body>
-                <div className="text-muted small">Số nhãn đang theo dõi</div>
+                <div className="small">Số nhãn đang theo dõi</div>
                 <div className="display-6 fw-semibold">{labels.length}</div>
-                <div className="text-muted small">Dựa trên dữ liệu trả về</div>
+                <div className="small">Dựa trên dữ liệu trả về</div>
               </Card.Body>
             </Card>
           </Col>
@@ -545,40 +551,40 @@ const DashboardPage = () => {
       {isDepartment && appliedFilters.departmentId && (
         <Row className="g-3 mb-3">
           <Col md={3} sm={6}>
-            <Card className={`${styles.statCard} ${styles.primary} h-100`}>
+            <Card className={`${styles.statCard} ${styles.primary} h-100 text-bg-primary`}>
               <Card.Body>
-                <div className="text-muted small">Tổng yêu cầu (phòng ban)</div>
+                <div className="small">Tổng yêu cầu (phòng ban)</div>
                 <div className="h3 fw-semibold">{numberFormat(department.total_requests || 0)}</div>
-                <div className="text-muted small">Bao gồm tất cả trạng thái</div>
+                <div className="small">Bao gồm tất cả trạng thái</div>
               </Card.Body>
             </Card>
           </Col>
           <Col md={3} sm={6}>
-            <Card className={`${styles.statCard} ${styles.warning} h-100`}>
+            <Card className={`${styles.statCard} ${styles.warning} h-100 text-bg-warning`}>
               <Card.Body>
-                <div className="text-muted small">Yêu cầu trễ hạn</div>
+                <div className="small">Yêu cầu trễ hạn</div>
                 <div className="display-6 fw-semibold">{numberFormat(department.total_overdue_requests || 0)}</div>
-                <div className="text-muted small">Riêng phòng ban đã chọn</div>
+                <div className="small">Riêng phòng ban đã chọn</div>
               </Card.Body>
             </Card>
           </Col>
           <Col md={3} sm={6}>
-            <Card className={`${styles.statCard} ${styles.success} h-100`}>
+            <Card className={`${styles.statCard} ${styles.success} h-100 text-bg-success`}>
               <Card.Body>
-                <div className="text-muted small">Đã dùng gợi ý phân loại</div>
+                <div className="small">Đã dùng gợi ý phân loại</div>
                 <div className="h3 fw-semibold">{numberFormat(department.total_prediction_used || 0)}</div>
-                <div className="text-muted small">Số yêu cầu đã áp dụng AI</div>
+                <div className="small">Số yêu cầu đã áp dụng AI</div>
               </Card.Body>
             </Card>
           </Col>
           <Col md={3} sm={6}>
-            <Card className={`${styles.statCard} ${styles.info} h-100`}>
+            <Card className={`${styles.statCard} ${styles.info} h-100 text-bg-info`}>
               <Card.Body>
-                <div className="text-muted small">Nhãn nhiều nhất (phòng ban)</div>
+                <div className="small">Nhãn nhiều nhất (phòng ban)</div>
                 <div className="h4 fw-semibold mb-1">
                   {department.by_label?.[0]?.label || "Chưa có"}
                 </div>
-                <div className="text-muted small">
+                <div className="small">
                   {department.by_label?.[0]?.count
                     ? `${numberFormat(department.by_label[0].count)} yêu cầu`
                     : "Không có dữ liệu"}
@@ -739,7 +745,7 @@ const DashboardPage = () => {
               <div className="text-center py-4"><Spinner animation="border" /></div>
             ) : department.overdue_by_assignee?.length ? (
               <div className="table-responsive">
-                <Table hover size="sm" className="align-middle">
+                <Table striped hover size="sm" className="align-middle">
                   <thead>
                     <tr>
                       <th>Nhân viên</th>

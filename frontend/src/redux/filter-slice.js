@@ -55,6 +55,7 @@ const filterSlice = createSlice({
     },
     setValuesState(state, action) {
       const { param, values } = action.payload;
+      // console.log("Setting filter values:", param, values);
       state.filterValues[param] = values;
     },
     resetFilterValue(state, action) {

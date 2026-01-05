@@ -94,6 +94,29 @@ const accountServices = backendApi.injectEndpoints({
         }
       },
     }),
+    updateMyProfile: build.mutation({
+      query: (payload) => ({
+        url: "/accounts/me",
+        method: "PUT",
+        data: payload,
+      }),
+      invalidatesTags: [{ type: "Account", id: "LIST" }],
+    }),
+    uploadMyAvatar: build.mutation({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append("avatar", file);
+        return {
+          url: "/accounts/me/avatar",
+          method: "POST",
+          data: formData,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        };
+      },
+      invalidatesTags: ["User", { type: "Account", id: "LIST" }],
+    }),
   }),
   overrideExisting: false,
 });
@@ -105,4 +128,6 @@ export const {
   useUpdateAccountMutation,
   useGetOfficersByDepartmentQuery,
   useGetDepartmentAndAccountsWithLabelsQuery,
+  useUpdateMyProfileMutation,
+  useUploadMyAvatarMutation,
 } = accountServices;

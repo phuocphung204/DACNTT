@@ -57,7 +57,8 @@ export const NOTIFICATION_TYPES = Object.freeze({
   REQUEST_REPLY_STUDENT: "REQUEST_REPLY_STUDENT", // Thông báo trả lời request cho sinh viên
   REQUEST_ASSIGNED: "REQUEST_ASSIGNED",           // Thông báo được phân công request cho officer
   CHAT_MESSAGE: "CHAT_MESSAGE",                    // Thông báo tin nhắn chat
-  NEW_REQUEST: "NEW_REQUEST"                       // Thông báo có request mới (Dành cho staff)
+  NEW_REQUEST: "NEW_REQUEST",                       // Thông báo có request mới (Dành cho staff)
+  REQUEST_OVERDUE: "REQUEST_OVERDUE"                // Thông báo request quá hạn (Dành cho officer)
 });
 
 // account variables
@@ -75,9 +76,9 @@ export const ACCOUNT_ROLES_ENUM = Object.freeze({
   ADMIN: "Admin"
 });
 export const ACCOUNT_ROLES = Object.freeze({
-  [ACCOUNT_ROLES_ENUM.OFFICER]: { label: "Cán bộ", value: "Officer" },
-  [ACCOUNT_ROLES_ENUM.STAFF]: { label: "Nhân viên", value: "Staff" },
-  [ACCOUNT_ROLES_ENUM.ADMIN]: { label: "Quản trị viên", value: "Admin" }
+  [ACCOUNT_ROLES_ENUM.OFFICER]: { label: "Officer", value: "Officer", variant: "info" },
+  [ACCOUNT_ROLES_ENUM.STAFF]: { label: "Staff", value: "Staff", variant: "primary" },
+  [ACCOUNT_ROLES_ENUM.ADMIN]: { label: "Quản trị viên", value: "Admin", variant: "success" }
 });
 export const WORK_STATUS_ENUM = Object.freeze({
   ACTIVE: "Active",

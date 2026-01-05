@@ -1,6 +1,6 @@
 import FilterClient from "#components/common/filter-cliend";
 
-const StaffRequestsPage = () => {
+const sStaffRequestsPage = () => {
   const handleSubmitFilters = (filters) => {
     console.log("Applied Staff Requests Filters: ", filters);
   }

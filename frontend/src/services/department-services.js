@@ -15,6 +15,17 @@ export const departmentService = backendApi.injectEndpoints({
       }),
       providesTags: ["Labels"],
     }),
+    updateDepartment: build.mutation({
+      query: ({ departmentId, payload }) => ({
+        url: `/departments/${departmentId}`,
+        method: "PUT",
+        data: payload,
+      }),
+
+      onQueryStarted: async (arg, { dispatch, queryFulfilled }) => {
+        console.log("Starting update for department:", arg);
+      }
+    }),
   }),
   overrideExisting: false,
 });
@@ -22,4 +33,5 @@ export const departmentService = backendApi.injectEndpoints({
 export const {
   useGetDepartmentsQuery,
   useGetAllLabelsQuery,
+  useUpdateDepartmentMutation,
 } = departmentService;

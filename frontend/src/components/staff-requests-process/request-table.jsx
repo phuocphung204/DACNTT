@@ -6,6 +6,7 @@ import { REQUEST_PRIORITY, REQUEST_STATUS_ENUM } from "#components/_variables";
 import { formatDateTime } from "#utils/format";
 
 import styles from "../../pages/staff-requests-process/staff-requests-process-page.module.scss";
+import { BsEye } from "react-icons/bs";
 
 const RequestTable = ({ data, onViewDetail, onSendReminder, remindLoadingId }) => {
   const columns = useMemo(
@@ -79,7 +80,6 @@ const RequestTable = ({ data, onViewDetail, onSendReminder, remindLoadingId }) =
         header: "Thao tác",
         id: "actions",
         cell: ({ row }) => {
-          const isLoading = remindLoadingId === row.original._id;
           return (
             <div className="d-flex flex-wrap gap-2">
               <Button
@@ -87,7 +87,7 @@ const RequestTable = ({ data, onViewDetail, onSendReminder, remindLoadingId }) =
                 variant="outline-primary"
                 onClick={() => onViewDetail(row.original)}
               >
-                Chi tiết
+                <BsEye />
               </Button>
             </div>
           );
@@ -105,7 +105,7 @@ const RequestTable = ({ data, onViewDetail, onSendReminder, remindLoadingId }) =
   });
 
   return (
-    <Table hover responsive size="sm" className="align-middle">
+    <Table striped hover responsive size="sm" className="align-middle">
       <thead>
         {table.getHeaderGroups().map((headerGroup) => (
           <tr key={headerGroup.id}>

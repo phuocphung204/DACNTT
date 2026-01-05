@@ -60,16 +60,16 @@ const LoginPage = () => {
         <div className="row align-items-center min-vh-100">
           <div className="col-lg-6 d-none d-lg-block">
             <div className="auth-hero">
-              <div className="auth-badge">2TPS Admin</div>
-              <h2>Chào mừng quay lại bảng điều khiển</h2>
+              <div className="auth-badge">Help desk</div>
+              <h2>Chào mừng trở lại trung tâm hỗ trợ</h2>
               <p>
-                Đăng nhập bằng tài khoản quản trị để theo dõi đơn hàng, người dùng,
-                sản phẩm và các chương trình khuyến mãi.
+                Đăng nhập để theo dõi yêu cầu, hỗ trợ người dùng và kiểm soát chất
+                lượng dịch vụ trong hệ thống Help desk.
               </p>
               <ul>
-                <li>Giám sát hoạt động bán hàng theo thời gian thực</li>
-                <li>Quản lý kho và cập nhật tồn kho tức thì</li>
-                <li>Phân quyền nhân sự và kiểm soát bảo mật</li>
+                <li>Giám sát trạng thái yêu cầu và SLA theo thời gian thực</li>
+                <li>Phân công, trao đổi và cập nhật tiến độ xử lý</li>
+                <li>Quản lý quyền truy cập và bảo mật dữ liệu</li>
               </ul>
             </div>
           </div>

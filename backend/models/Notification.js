@@ -4,7 +4,8 @@ export const NOTIFICATION_TYPES = Object.freeze({
   REQUEST_REPLY_STUDENT: "REQUEST_REPLY_STUDENT", // Thông báo trả lời request cho sinh viên
   REQUEST_ASSIGNED: "REQUEST_ASSIGNED",         // Thông báo được phân công request cho officer
   CHAT_MESSAGE: "CHAT_MESSAGE", // Thông báo tin nhắn chat
-  NEW_REQUEST: "NEW_REQUEST" // Thông báo có request mới (Dành cho staff)
+  NEW_REQUEST: "NEW_REQUEST", // Thông báo có request mới (Dành cho staff)
+  REQUEST_OVERDUE: "REQUEST_OVERDUE" // Thông báo request quá hạn (Dành cho officer)
 });
 
 const SenderSchema = new Schema({

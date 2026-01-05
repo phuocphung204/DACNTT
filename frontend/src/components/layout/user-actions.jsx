@@ -31,9 +31,9 @@ const UserActions = () => {
       </Dropdown.Toggle>
 
       <Dropdown.Menu as="ul">
-        <Dropdown.Item as="li" href="#/action-1">Action</Dropdown.Item>
-        <Dropdown.Item as="li" href="#/action-2">Another action</Dropdown.Item>
-        <Dropdown.Item as="li" href="#/action-3">Something else</Dropdown.Item>
+        <Dropdown.Item as="li" onClick={() => navigate("/thong-tin-ca-nhan")}>
+          Thông tin cá nhân
+        </Dropdown.Item>
         <Dropdown.Divider />
         <Dropdown.Item as="li" onClick={handleLogout}>
           Đăng xuất

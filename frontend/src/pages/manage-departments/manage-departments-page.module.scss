@@ -1,0 +1,39 @@
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.headerTitle {
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.metaText {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.tableActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badgePill {
+  border-radius: 999px;
+}
+
+.descBox {
+  height: 250px;
+  // max-height: 140px;
+  padding: 10px 12px;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  background: #f8f9fa;
+  color: #212529;
+  white-space: pre-line;
+  overflow: auto;
+}

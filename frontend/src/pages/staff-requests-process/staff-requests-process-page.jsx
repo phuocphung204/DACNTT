@@ -14,6 +14,8 @@ import { getErrorMessage } from "../../components/staff-requests-process/helpers
 
 import styles from "./staff-requests-process-page.module.scss";
 import { removeVietnameseTones } from "#utils/normalize";
+import { setValuesState } from "#redux/filter-slice";
+import { useDispatch, useSelector } from "react-redux";
 
 const PRIORITY_SLA_HOURS = {
   0: 48,
@@ -52,6 +54,8 @@ const computeDueState = (status, dueAt, now) => {
 };
 
 const StaffRequestsProcessPage = () => {
+  const dispatch = useDispatch();
+  const filterValues = useSelector((state) => state.filter.filterValues);
   const { push } = userModalDialogStore(
     useShallow((state) => ({
       push: state.push,
@@ -61,10 +65,12 @@ const StaffRequestsProcessPage = () => {
   // const { state: { qState = "", dateState = "", requestIdState = "" } = {} } = useLocation(); // Lấy state từ điều hướng
 
   const [clientFilterValues, setClientFilterValues] = useState({
-    priority: [],
-    status: [],
-    searchText: "",
+    priority: filterValues?.priority || [],
+    status: filterValues?.status || [],
+    searchText: filterValues?.searchText || "",
   });
+  const currentSearchText = clientFilterValues.searchText;
+  console.log("currentSearchText", currentSearchText);
 
   const [activeTab, setActiveTab] = useState("pending");
   const [pageSize, setPageSize] = useState(20);
@@ -75,7 +81,7 @@ const StaffRequestsProcessPage = () => {
   });
   const [remindLoadingId, setRemindLoadingId] = useState("");
 
-  const [requestParams, setRequestParams] = useState({ timeRange: "today" });
+  const [requestParams, setRequestParams] = useState({ timeRange: filterValues?.timeRange || "today" });
 
   const {
     data: requestsResponse,
@@ -241,6 +247,7 @@ const StaffRequestsProcessPage = () => {
 
   const handleSearchBarSubmit = (newParams) => {
     const q = newParams.get("q") || "";
+    dispatch(setValuesState({ param: "searchText", values: q }));
     setClientFilterValues((prev) => ({ ...prev, searchText: q }));
   }
 
@@ -330,11 +337,19 @@ const StaffRequestsProcessPage = () => {
           <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div className="w-100">
               <SearchBar
+                initialValue={currentSearchText}
                 placeholder="Tìm kiếm theo tiêu đề, mã sinh viên"
                 onSubmit={handleSearchBarSubmit}
               />
             </div>
-            <FilterClient onSubmit={handleFilterSubmit} selectedFilterOptions={[TIME_RANGE, PRIORITY]} />
+            <FilterClient onSubmit={handleFilterSubmit}
+              selectedFilterOptions={[TIME_RANGE, PRIORITY]}
+              defaultValues={[{
+                optionKey: TIME_RANGE,
+                optionLabel: "Thời gian",
+                displayValues: ["Hôm nay"],
+              }]}
+            />
             {loading && <Spinner animation="border" size="sm" />}
           </div>
           {displayError && (
