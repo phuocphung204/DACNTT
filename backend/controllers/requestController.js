@@ -2,64 +2,104 @@ import Request from "../models/Request.js";
 import Department from "../models/Department.js";
 import { preprocessText, predict_label } from "../services/finetune.js";
 import { supabase } from "../services/supabaseClient.js";
-import { request } from "express";
 
 // System
+
+export const createRequestFunction = async (student_email, subject, content, student_id) => {
+    // Tiền xử lý dữ liệu content
+    const preprocessedContent = preprocessText(content);
+    console.log("Preprocessed Content:", preprocessedContent);
+    // Gọi model để dự đoán nhãn
+    const predictionResponse = await predict_label(preprocessedContent);
+    console.log(1);
+    if (predictionResponse.ec !== 200) {
+        console.log("Prediction Error:", predictionResponse.em);
+        throw new Error(predictionResponse.em);
+    }
+    console.log("Prediction Response:", predictionResponse.dt);
+
+    // Lấy dự đoán
+    const category = predictionResponse.dt.category;
+    const priority = predictionResponse.dt.priority;
+    const label_category = category.label;
+
+    // Tìm department tương ứng với nhãn dự đoán
+    const department = await Department.findOne({ "labels.label": label_category });
+    if (!department) {
+        console.log("No department found for label_category:", label_category);
+        throw new Error("No department found for the predicted label");
+    }
+    // Tạo request mới
+    const newRequest = await Request.create({
+        student_email,
+        subject,
+        content,
+        student_id,
+        prediction: {
+            category: {
+                label_id: category.id,
+                label: category.label,
+                score: category.score
+            },
+            priority: {
+                label_id: priority.id,
+                label: priority.label,
+                score: priority.score
+            },
+            department_id: department._id
+        },
+        attachments: [],
+        history: [{ status: "Pending" }]
+    });
+    return newRequest;
+}
+
 export const createRequest = async (req, res) => {
     try {
-        const { student_email, subject, content, student_id, attachments } = req.body;
+        const { student_email, subject, content, student_id } = req.body;
 
-        // Tiền xử lý dữ liệu content
-        const preprocessedContent = preprocessText(content);
-        console.log("Preprocessed Content:", preprocessedContent);
+        const newRequest = await createRequestFunction(student_email, subject, content, student_id);
 
-        // Gọi model để dự đoán nhãn
-        const predictionResponse = await predict_label(preprocessedContent);
-        console.log(1);
-        if (predictionResponse.ec !== 200) {
-            console.log("Prediction Error:", predictionResponse.em);
-            return res.status(predictionResponse.ec).json({ ec: predictionResponse.ec, em: predictionResponse.em });
-        }
-        console.log("Prediction Response:", predictionResponse.dt);
-
-        // Lấy dự đoán
-        const category = predictionResponse.dt.category;
-        const priority = predictionResponse.dt.priority;
-
-        const label_category = category.label;
-
-        // Tìm department tương ứng với nhãn dự đoán
-        const department = await Department.findOne({ "labels.label": label_category });
-        if (!department) {
-            console.log("No department found for label_category:", label_category);
-            return res.status(404).json({ ec: 404, em: "No department found for the predicted label" });
-        }
-        // Tạo request mới
-        const newRequest = await Request.create({
-            student_email,
-            subject,
-            content,
-            student_id,
-            prediction: {
-                category: {
-                    label_id: category.id,
-                    label: category.label,
-                    score: category.score
-                },
-                priority: {
-                    label_id: priority.id,
-                    label: priority.label,
-                    score: priority.score
-                },
-                department_id: department._id
-            },
-            attachments: attachments || [],
-            history: [{ status: "Pending" }]
-        });
         res.status(201).json({ ec: 201, em: "Request created successfully", dt: newRequest });
     } catch (error) {
         res.status(500).json({ ec: 500, em: error.message });
     }
+};
+
+export const uploadAttachmentsFunction = async (request_id, file) => {
+    const request = await Request.findById(request_id);
+    if (!request) {
+        throw new Error("Request not found");
+    }
+    if (!file) {
+        throw new Error("No attachment uploaded");
+    }
+    const filename = `${Date.now()}_${file.originalname}`;
+
+    // Upload file vào bucket private "attachments"
+    const { data, error } = await supabase.storage
+        .from("attachments")
+        .upload(filename, file.buffer, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: file.mimetype,
+        });
+    if (error) {
+        throw new Error(error.message);
+    }
+
+    request.attachments.push({
+        cloud_key: data.path,
+        originalname: file.originalname,
+        mime_type: file.mimetype,
+    });
+    await request.save();
+    return {
+        stored_name: filename,
+        original_name: file.originalname,
+        mime_type: file.mimetype,
+        cloud_key: data.path
+    };
 };
 
 export const uploadAttachments = async (req, res) => {
@@ -67,46 +107,12 @@ export const uploadAttachments = async (req, res) => {
         const request_id = req.params.request_id;
         const file = req.file;
 
-        const request = await Request.findById(request_id);
-        if (!request) {
-            return res.status(404).json({ mc: 404, me: "Request not found" });
-        }
-
-        if (!file) {
-            return res.status(400).json({ mc: 400, me: "No attachment uploaded" });
-        }
-
-        const filename = `${Date.now()}_${file.originalname}`;
-
-        // Upload file vào bucket private "attachments"
-        const { data, error } = await supabase.storage
-            .from("attachments")
-            .upload(filename, file.buffer, {
-                cacheControl: '3600',
-                upsert: false,
-                contentType: file.mimetype,
-            });
-
-        request.attachments.push({
-            cloud_key: data.path,
-            originalname: file.originalname,
-            mime_type: file.mimetype,
-        });
-        await request.save();
-
-        if (error) {
-            return res.status(500).json({ mc: 500, me: error.message });
-        }
+        const data = await uploadAttachmentsFunction(request_id, file);
 
         return res.status(200).json({
             mc: 200,
             me: "Attachment uploaded successfully",
-            dt: {
-                stored_name: filename,
-                original_name: file.originalname,
-                mime_type: file.mimetype,
-                cloud_key: data.path
-            }
+            dt: data
         });
 
     } catch (error) {
