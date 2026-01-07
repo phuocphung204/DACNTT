@@ -2,9 +2,10 @@
 
 > **Trạng thái:** Dự án hiện **chưa sẵn sàng để public / triển khai production**.
 >
+> - Do xây dựng nhanh trên mail cá nhân và phải cần có các secrets/credentials để chạy các dịch vụ gmail API của google.
 > - Có tích hợp Email/Gmail, Pub/Sub, Socket.IO và các khóa bí mật (secrets/credentials) liên quan.
 > - Chỉ nên chạy trong môi trường **local/dev** hoặc mạng nội bộ.
-> - Không khuyến nghị expose trực tiếp ra Internet khi chưa rà soát bảo mật, cấu hình và secrets.
+> - Nếu dùng gmail workspace thì có thể triển khai đơn giản hơn trong nội bộ.
 
 ## Giới thiệu
 
@@ -132,19 +133,17 @@ SANG_REDIRECT_URI=replace_me
 
 ### Backend (`backend/package.json`)
 
-- `npm run start`: chạy `nodemon server.js`
 - `npm run dev`: chạy đồng thời `node smee.js` và `nodemon server.js`
 
 ### Frontend (`frontend/package.json`)
 
 - `npm start`: chạy dev server (CRA)
-- `npm run build`: build
 
 ## Ghi chú quan trọng (chưa production-ready)
 
 - **Secrets/credentials**: cần chuyển toàn bộ secrets sang `.env`/secret manager và đảm bảo không commit.
 - **Bảo mật**: cần rà soát CORS, JWT, cấu hình OAuth, logging và các endpoint trước khi public.
-- **Hạ tầng**: Pub/Sub + Gmail watch cần quy trình cấp quyền, rotate token, handle lỗi/expiry ổn định.
+- **Hạ tầng**: Pub/Sub + Gmail watch cần quy trình cấp quyền, rotate token.
 
 ## License
 
