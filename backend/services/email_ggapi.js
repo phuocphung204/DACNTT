@@ -1,12 +1,13 @@
 // gmail.service.js
 import { google } from "googleapis";
 import { simpleParser } from "mailparser";
-import axios from "axios";
-import FormData from "form-data";
+// import axios from "axios";
+// import FormData from "form-data";
 import dotenv from "dotenv";
 import Account, { ACCOUNT_ROLES, WORK_STATUS } from "../models/Account.js";
 import { createNotification, sendNotification } from "../controllers/notification-controller.js";
 import { NOTIFICATION_TYPES } from "../models/Notification.js";
+import { createRequestFunction, uploadAttachmentsFunction } from "../controllers/requestController.js";
 dotenv.config();
 
 export const oauth2Client = new google.auth.OAuth2(
@@ -15,7 +16,7 @@ export const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CALLBACK_URL_LINK
 );
 
-// oauth2Client.on('tokens', (tokens) => {
+// oauth2Client.on('tokens', async (tokens) => {
 //   if (tokens.refresh_token) {
 //     console.log("⚠️ Google trả refresh_token mới → BỎ QUA, KHÔNG GHI ĐÈ!");
 //     // KHÔNG làm gì cả — không overwrite .env
@@ -97,32 +98,27 @@ export const readUnreadEmails = async (req, res) => {
       const senderEmail = from.address;
       const student_id = senderEmail.split("@")[0];
 
-      // Gọi API nội bộ để tạo request
-      const resquest = await axios.post(`http://localhost:${process.env.PORT}/api/requests`, {
-        student_email: senderEmail,
-        subject: parsed.subject,
-        content: parsed.text,
+      // Tạo request mới
+      const resquest = await createRequestFunction(
+        senderEmail,
+        parsed.subject,
+        parsed.text,
         student_id
-      });
+      );
 
-      const request_id = resquest.data.dt._id;
+      const request_id = resquest._id;
       const attachments = parsed.attachments;
-      // Gửi attachments sang API
+      // Tạo attachments trong request nếu có
       if (attachments?.length > 0) {
         // console.log(`Uploading ${attachments.length} attachments for request ${request_id}`);
         for (const att of attachments) {
           // console.log("Uploading attachment:", att.filename);
           try {
-            const form = new FormData();
-            form.append("attachment", att.content, {
-              filename: att.filename || "file.bin",
-              contentType: att.contentType,
-            });
-
-            await axios.post(
-              `http://localhost:${process.env.PORT}/api/requests/${request_id}/attachments`,
-              form,
-              { headers: form.getHeaders() }
+            await uploadAttachmentsFunction(request_id, {
+              originalname: att.filename || "file.bin",
+              mimetype: att.contentType,
+              buffer: att.content
+            }
             );
           } catch (err) {
             console.error("Failed to upload attachment", att.filename, err.message);
@@ -144,7 +140,7 @@ export const readUnreadEmails = async (req, res) => {
             recipient_id: staff._id,
             type: NOTIFICATION_TYPES.NEW_REQUEST,
             entity_id: request_id,
-            data: { request_id, subject: parsed.subject, date: resquest.data.dt.created_at }
+            data: { request_id, subject: parsed.subject }
           });
           sendNotification(staff._id, notification);
           console.log("Sent NEW_REQUEST notification to staff:", staff._id);

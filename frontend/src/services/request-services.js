@@ -68,7 +68,7 @@ export const requestService = backendApi.injectEndpoints({
       async queryFn({ requestId, attachmentId }) {
         try {
           const response = await fetch(
-            `${BASE_URL}/requests/${requestId}/attachments/${attachmentId}`,
+            `${BASE_URL}/api/requests/${requestId}/attachments/${attachmentId}`,
             { headers: getAuthHeaders() }
           );
           if (!response.ok) {
